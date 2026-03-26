@@ -1,217 +1,265 @@
-import { useState, type ReactElement } from "react";
-import { Save, School, Calendar, ShieldCheck, Bell, Edit2 } from "lucide-react";
+import React from "react";
+import { 
+  Save, 
+  School, 
+  Calendar, 
+  ShieldCheck, 
+  Bell, 
+  Edit2, 
+  CheckCircle,
+  Globe,
+  Mail,
+  Phone,
+  Hash
+} from "lucide-react";
+import { Button, Input, Select, Card, StatusBadge } from '../ui';
+import useSettingsForm, { type SettingsTab, type NotificationSettings } from "../../hooks/useSettingsForm";
+// Reusable Helper for consistent labeling
+const FormLabel = ({ children }: { children: React.ReactNode }) => (
+  <label className="text-[11px] font-black uppercase tracking-widest text-slate-400 mb-2 block">
+    {children}
+  </label>
+);
 
-type NotificationKey = "email" | "attendance" | "enrollments" | "events" | "system";
-
-type NotificationsState = Record<NotificationKey, boolean>;
-
-interface NavItem {
-  id: string;
-  name: string;
-  icon: ReactElement;
-  color: string;
-}
-
-interface RoleItem {
-  name: string;
-  permissions: string[];
-}
-
-interface NotificationItem {
-  key: NotificationKey;
-  title: string;
-  desc: string;
-}
-
-const AdminSettingData = () => {
-  const [activeTab, setActiveTab] = useState("School");
-
-  const [notifications, setNotifications] = useState<NotificationsState>({
-    email: true,
-    attendance: false,
-    enrollments: true,
-    events: false,
-    system: true,
-  });
-
-  const toggleSwitch = (key: NotificationKey) => {
-    setNotifications((prev) => ({ ...prev, [key]: !prev[key] }));
-  };
-
-  const navItems: NavItem[] = [
-    { id: "School", name: "School", icon: <School className="w-4 h-4" />, color: "border-blue-500" },
-    { id: "Academic", name: "Academic", icon: <Calendar className="w-4 h-4" />, color: "border-blue-500" },
-    { id: "Roles", name: "Roles", icon: <ShieldCheck className="w-4 h-4" />, color: "border-blue-500" },
-    { id: "Notifications", name: "Notifications", icon: <Bell className="w-4 h-4" />, color: "border-blue-500" },
-  ];
-
-  const SchoolForm = () => (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="space-y-2">
-          <label className="text-sm font-semibold text-slate-700">School Name</label>
-          <input type="text" defaultValue="EduManage International School" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20" />
-        </div>
-        <div className="space-y-2">
-          <label className="text-sm font-semibold text-slate-700">School Code</label>
-          <input type="text" defaultValue="EMIS-2024" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20" />
-        </div>
+const SchoolForm = () => (
+  <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-400">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="flex flex-col">
+        <FormLabel>School Name</FormLabel>
+        <Input icon={School} defaultValue="EduManage International School" />
       </div>
-      <div className="space-y-2">
-        <label className="text-sm font-semibold text-slate-700">Address</label>
-        <textarea rows={2} defaultValue="123 Education Lane, Academic City" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm resize-none" />
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="space-y-2">
-          <label className="text-sm font-semibold text-slate-700">Phone</label>
-          <input type="text" defaultValue="+977 12345678" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm" />
-        </div>
-        <div className="space-y-2">
-          <label className="text-sm font-semibold text-slate-700">Email</label>
-          <input type="email" defaultValue="info@edumanage.com" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm" />
-        </div>
-        <div className="space-y-2">
-          <label className="text-sm font-semibold text-slate-700">Website</label>
-          <input type="url" defaultValue="https://www.edumanage.com" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm" />
-        </div>
+      <div className="flex flex-col">
+        <FormLabel>School Code</FormLabel>
+        <Input icon={Hash} defaultValue="EMIS-2024" />
       </div>
     </div>
-  );
 
-  const AcademicForm = () => (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="space-y-2">
-          <label className="text-sm font-semibold text-slate-700">Current Academic Year</label>
-          <select className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm">
-            <option>2025-26</option>
-            <option>2026-27</option>
-          </select>
-        </div>
-        <div className="space-y-2">
-          <label className="text-sm font-semibold text-slate-700">Current Semester</label>
-          <select className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm">
-            <option>Semester 1</option>
-            <option>Semester 2</option>
-          </select>
-        </div>
+    <div className="flex flex-col">
+      <FormLabel>Full Address</FormLabel>
+      {/* If your UI library has a Textarea component, use it here. 
+          Otherwise, styling it to match your Input component: */}
+      <textarea
+        rows={3}
+        placeholder="Full Address"
+        defaultValue="123 Education Lane, Academic City"
+        className="w-full rounded-2xl border border-slate-100 bg-white px-4 py-3 text-sm font-bold text-slate-700 transition-all placeholder:text-slate-300 focus:outline-none focus:ring-4 focus:ring-blue-500/5 hover:border-blue-100 focus:border-blue-500 resize-none shadow-sm"
+      />
+    </div>
+
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div>
+        <FormLabel>Phone</FormLabel>
+        <Input icon={Phone} defaultValue="+977 12345678" />
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="space-y-2">
-          <label className="text-sm font-semibold text-slate-700">Year Start Date</label>
-          <input type="date" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm" />
-        </div>
-        <div className="space-y-2">
-          <label className="text-sm font-semibold text-slate-700">Year End Date</label>
-          <input type="date" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm" />
-        </div>
+      <div>
+        <FormLabel>Admin Email</FormLabel>
+        <Input icon={Mail} type="email" defaultValue="info@edumanage.com" />
+      </div>
+      <div>
+        <FormLabel>Official Website</FormLabel>
+        <Input icon={Globe} type="url" defaultValue="https://www.edumanage.com" />
       </div>
     </div>
-  );
+  </div>
+);
 
-  const roles: RoleItem[] = [
-    { name: "Admin", permissions: ["Full System Access", "User Management", "Settings", "Reports"] },
-    { name: "Teacher", permissions: ["Manage Attendance", "Enter Marks", "View Students"] },
-    { name: "Student", permissions: ["View Attendance", "View Results", "Download Materials"] },
+const AcademicForm = () => (
+  <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-400">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div>
+        <FormLabel>Current Academic Year</FormLabel>
+        <Select options={["2025-26", "2026-27"]} />
+      </div>
+      <div>
+        <FormLabel>Current Semester</FormLabel>
+        <Select options={["Semester 1", "Semester 2"]} />
+      </div>
+    </div>
+
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+      <div>
+        <FormLabel>Year Start Date</FormLabel>
+        <Input type="date" icon={Calendar} />
+      </div>
+      <div>
+        <FormLabel>Year End Date</FormLabel>
+        <Input type="date" icon={Calendar} />
+      </div>
+    </div>
+  </div>
+);
+
+const RolesForm = () => {
+  const roles = [
+    { name: "Admin", permissions: ["Full System Access", "User Management", "Settings", "Reports"], variant: "info" as const },
+    { name: "Teacher", permissions: ["Manage Attendance", "Enter Marks", "View Students"], variant: "success" as const },
+    { name: "Student", permissions: ["View Attendance", "View Results", "Download Materials"], variant: "default" as const }
   ];
 
-  const RolesForm = () => (
-    <div className="space-y-4">
+  return (
+    <div className="grid grid-cols-1 gap-4 animate-in fade-in slide-in-from-bottom-2 duration-400">
       {roles.map((role) => (
-        <div key={role.name} className="border border-slate-200 rounded-xl p-5 bg-white shadow-sm">
+        <Card key={role.name} className="p-5 group hover:border-blue-200 transition-all duration-300">
           <div className="flex justify-between items-start mb-4">
-            <div>
-              <h3 className="text-lg font-bold text-slate-900">{role.name}</h3>
-              <p className="text-sm text-slate-400">{role.permissions.length} permissions</p>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-blue-50 group-hover:text-blue-600 transition-colors">
+                <ShieldCheck size={20} />
+              </div>
+              <div>
+                <h3 className="text-lg font-black text-slate-800 tracking-tight">{role.name}</h3>
+                <StatusBadge status="Active" variant={role.variant} />
+              </div>
             </div>
-            <button className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg">
-              <Edit2 className="w-4 h-4" />
-            </button>
+            <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity">
+              <Edit2 size={14} className="mr-2" /> Edit Permissions
+            </Button>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 pl-13">
             {role.permissions.map((perm) => (
-              <span key={perm} className="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-md text-xs font-medium">
+              <span key={perm} className="px-3 py-1 bg-slate-50 text-slate-500 rounded-lg text-[10px] font-bold border border-slate-100 uppercase tracking-tight">
                 {perm}
               </span>
             ))}
           </div>
-        </div>
+        </Card>
       ))}
     </div>
   );
+};
 
-  const notificationsList: NotificationItem[] = [
-    { key: "email", title: "Email Notifications", desc: "Receive notifications via email" },
-    { key: "attendance", title: "Attendance Alerts", desc: "Get notified about low attendance" },
-    { key: "enrollments", title: "New Enrollments", desc: "Notifications for new students" },
-    { key: "events", title: "Event Reminders", desc: "Reminders for upcoming events" },
-    { key: "system", title: "System Updates", desc: "Information about system maintenance" },
+interface NotificationsFormProps {
+  notifications: NotificationSettings;
+  toggleNotification: (key: keyof NotificationSettings) => void;
+}
+
+const NotificationsForm = ({ notifications, toggleNotification }: NotificationsFormProps) => {
+  const notificationsList: { key: keyof NotificationSettings; title: string; desc: string }[] = [
+    { key: "email", title: "Email Notifications", desc: "Receive summary reports via email" },
+    { key: "attendance", title: "Attendance Alerts", desc: "Notify parents automatically for absences" },
+    { key: "enrollments", title: "New Enrollments", desc: "Alert admin when a new student is registered" },
+    { key: "events", title: "Event Reminders", desc: "Push notifications for upcoming holidays" },
   ];
 
-  const NotificationsForm = () => (
-    <div className="space-y-6">
+  return (
+    <div className="divide-y divide-slate-50 animate-in fade-in slide-in-from-bottom-2 duration-400">
       {notificationsList.map((item) => (
-        <div key={item.key} className="flex items-center justify-between border-b border-slate-100 pb-4">
-          <div>
-            <h3 className="text-sm font-semibold text-slate-800">{item.title}</h3>
-            <p className="text-sm text-slate-400">{item.desc}</p>
+        <div key={item.key} className="flex items-center justify-between py-6 first:pt-0 last:pb-0">
+          <div className="flex items-start gap-4">
+            <div className={`p-2 rounded-xl ${notifications[item.key] ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-50 text-slate-400'} transition-colors`}>
+              <Bell size={18} />
+            </div>
+            <div>
+              <h3 className="text-sm font-black text-slate-800 tracking-tight">{item.title}</h3>
+              <p className="text-xs text-slate-400 font-medium mt-0.5">{item.desc}</p>
+            </div>
           </div>
-          <button
-            onClick={() => toggleSwitch(item.key)}
-            className={`relative w-12 h-6 rounded-full transition ${notifications[item.key] ? "bg-blue-600" : "bg-slate-300"}`}
+          {/* Reusable Toggle UI */}
+          <Button
+            type="button"
+            onClick={() => toggleNotification(item.key)}
+            className={`relative w-12 h-6 rounded-full transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-blue-500/10 ${
+              notifications[item.key] ? "bg-emerald-500 shadow-lg shadow-emerald-100" : "bg-slate-200"
+            }`}
           >
-            <span className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition ${notifications[item.key] ? "translate-x-6" : ""}`} />
-          </button>
+            <div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform duration-300 shadow-sm ${
+              notifications[item.key] ? "translate-x-6" : ""
+            }`} />
+          </Button>
         </div>
       ))}
     </div>
   );
+};
 
-  const renderContent = () => {
-    switch (activeTab) {
-      case "School": return <SchoolForm />;
-      case "Academic": return <AcademicForm />;
-      case "Roles": return <RolesForm />;
-      case "Notifications": return <NotificationsForm />;
-      default: return null;
-    }
-  };
+const AdminSettingsData = () => {
+  const { activeTab, setActiveTab, notifications, toggleNotification, showSaved, handleSave } = useSettingsForm();
+
+  const navItems: { id: SettingsTab; icon: React.ComponentType<{ size?: number } & React.SVGProps<SVGSVGElement>> }[] = [
+    { id: "School", icon: School },
+    { id: "Academic", icon: Calendar },
+    { id: "Roles", icon: ShieldCheck },
+    { id: "Notifications", icon: Bell },
+  ];
 
   return (
-    <div className="p-6 bg-slate-50 min-h-screen">
-      <div className="max-w-4xl mx-auto mb-6">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div className="p-6 md:p-8 bg-slate-50 min-h-screen font-sans text-slate-700">
+      
+      {/* 1. Header Navigation Tabs */}
+      <div className="max-w-4xl mx-auto mb-8">
+        <div className="flex flex-wrap gap-2 p-1.5 bg-slate-200/50 rounded-2xl w-fit">
           {navItems.map((item) => (
             <button
               key={item.id}
               onClick={() => setActiveTab(item.id)}
-              className={`flex items-center justify-center gap-2 p-3 bg-white rounded-xl border-t-4 shadow-sm transition ${
-                activeTab === item.id ? `${item.color} text-slate-900 font-semibold` : "border-transparent text-slate-500"
+              className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300 ${
+                activeTab === item.id
+                  ? "bg-white text-blue-600 shadow-sm"
+                  : "text-slate-500 hover:text-slate-800"
               }`}
             >
-              {item.icon}
-              <span className="text-sm">{item.name}</span>
+              <item.icon size={14} />
+              {item.id}
             </button>
           ))}
         </div>
       </div>
 
-      <div className="bg-white border border-slate-200 rounded-2xl p-8 shadow-sm max-w-4xl mx-auto">
-        <div className="mb-6">
-          <h1 className="text-xl font-bold text-slate-900">{activeTab} Management</h1>
-          <p className="text-sm text-slate-500">Manage {activeTab.toLowerCase()} settings</p>
+      {/* 2. Main Content Card */}
+      <Card noPadding className="max-w-4xl mx-auto overflow-hidden border-none shadow-xl shadow-slate-200/50 bg-white">
+        <div className="bg-white px-8 py-6 border-b border-slate-50 flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-black text-slate-800 tracking-tight">{activeTab}</h1>
+            <p className="text-[11px] text-slate-400 font-bold uppercase tracking-widest mt-1">Global Configuration</p>
+          </div>
+          <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center">
+             {navItems.find(i => i.id === activeTab)?.icon && React.createElement(navItems.find(i => i.id === activeTab)!.icon, { size: 24 })}
+          </div>
         </div>
-        {renderContent()}
-      </div>
+        
+        <div className="p-8 min-h-[400px]">
+          {activeTab === "School" && <SchoolForm />}
+          {activeTab === "Academic" && <AcademicForm />}
+          {activeTab === "Roles" && <RolesForm />}
+          {activeTab === "Notifications" && (
+            <NotificationsForm notifications={notifications} toggleNotification={toggleNotification} />
+          )}
+        </div>
 
-      <div className="max-w-4xl mx-auto flex justify-end mt-6">
-        <button className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-lg font-semibold shadow-md hover:bg-blue-700 active:scale-95 transition">
-          <Save className="w-4 h-4" />
-          Save Changes
-        </button>
-      </div>
+        {/* 3. Global Footer / Save Action */}
+        <div className="bg-slate-50/50 px-8 py-5 border-t border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-4">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+              Last modified: 26 March 2026
+            </p>
+          </div>
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            <Button variant="ghost" className="flex-1 sm:flex-none">Discard</Button>
+            <Button 
+              onClick={handleSave} 
+              variant="primary"
+              className="flex-1 sm:flex-none px-8 shadow-lg shadow-blue-100"
+            >
+              <Save size={16} className="mr-2" />
+              Save Changes
+            </Button>
+          </div>
+        </div>
+      </Card>
+
+      {/* 4. Success Toast */}
+      {showSaved && (
+        <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-bottom-5 duration-300">
+          <div className="bg-slate-900 text-white px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 border border-slate-800">
+            <div className="bg-emerald-500 p-1 rounded-full">
+              <CheckCircle size={16} className="text-white" />
+            </div>
+            <span className="text-sm font-bold tracking-tight">System settings synchronized!</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
-export default AdminSettingData;
+export default AdminSettingsData;

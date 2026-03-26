@@ -11,7 +11,7 @@ export default function LoginPage() {
   const navigate = useNavigate();
 
   // Updated to .com to match your AuthContext USERS mock data
-  const [email, setEmail] = useState("admin@school.com");
+  const [email, setEmail] = useState("admin@edumanage.com");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [activeRole, setActiveRole] = useState("Admin");
@@ -38,7 +38,7 @@ export default function LoginPage() {
     const tl = gsap.timeline();
     tl.from(leftRef.current, {
       x: -100,
-      opacity: 0,
+      opacity: 1,
       duration: 0.8,
       ease: "power3.out",
     });
@@ -46,7 +46,7 @@ export default function LoginPage() {
       rightRef.current,
       {
         x: 100,
-        opacity: 0,
+        opacity: 1,
         duration: 0.8,
         ease: "power3.out",
       },
