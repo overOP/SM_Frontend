@@ -1,8 +1,13 @@
+
+
+
+
 import { useState } from "react";
 import {
   ChevronDown, ChevronLeft, ChevronRight,
   Download, Save, CheckCircle2, XCircle, Clock
 } from "lucide-react";
+import * as XLSX from 'xlsx'; // Import for Excel Export
 
 type AttendanceStatus = "Present" | "Absent" | "On Leave";
 
@@ -25,13 +30,50 @@ const AdminAttendanceData = () => {
     { id: 1, name: "Alex Thompson", roll: "STU001", status: "Present", initials: "AT", color: "bg-blue-100 text-blue-600" },
     { id: 2, name: "Emma Watson", roll: "STU002", status: "Present", initials: "EW", color: "bg-purple-100 text-purple-600" },
     { id: 3, name: "John Doe", roll: "STU003", status: "Absent", initials: "JD", color: "bg-emerald-100 text-emerald-600" },
+    { id: 4, name: "Sarah Connor", roll: "STU004", status: "Present", initials: "SC", color: "bg-rose-100 text-rose-600" },
+    { id: 5, name: "Michael J.", roll: "STU005", status: "On Leave", initials: "MJ", color: "bg-orange-100 text-orange-600" },
   ]);
 
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
   const formattedDate = new Date(selectedDate).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" });
 
+  // --- Dynamic Stats Calculations ---
+  const totalStudents = students.length;
+  const presentCount = students.filter(s => s.status === "Present").length;
+  const absentCount = students.filter(s => s.status === "Absent").length;
+  const leaveCount = students.filter(s => s.status === "On Leave").length;
+  const attendanceRate = totalStudents > 0 ? Math.round((presentCount / totalStudents) * 100) : 0;
+
   const updateStatus = (id: number, status: AttendanceStatus) => {
     setStudents((prev) => prev.map((s) => s.id === id ? { ...s, status } : s));
+  };
+
+  // --- 1. EXCEL EXPORT FUNCTION ---
+  const handleExport = () => {
+    const dataToExport = students.map((s, index) => ({
+      "S.No": index + 1,
+      "Student Name": s.name,
+      "Roll Number": s.roll,
+      "Attendance Status": s.status,
+      "Class": selectedClass,
+      "Date": selectedDate
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Attendance");
+    XLSX.writeFile(workbook, `Attendance_${selectedClass}_${selectedDate}.xlsx`);
+  };
+
+  // --- 2. SAVE FUNCTION ---
+  const handleSave = () => {
+    // In a real app, you'd send 'students' array to your backend here
+    console.log("Saving Attendance Data:", {
+      date: selectedDate,
+      class: selectedClass,
+      records: students
+    });
+    alert(`Success! Attendance for ${selectedClass} on ${selectedDate} has been saved.`);
   };
 
   return (
@@ -95,10 +137,16 @@ const AdminAttendanceData = () => {
         </div>
 
         <div className="flex gap-3 w-full lg:w-auto">
-          <button className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-50 transition-all active:scale-95 shadow-sm">
+          <button 
+            onClick={handleExport}
+            className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-50 transition-all active:scale-95 shadow-sm"
+          >
             <Download className="w-4 h-4" /> <span className="hidden sm:inline">Export</span>
           </button>
-          <button className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition-all active:scale-95 shadow-md shadow-blue-200">
+          <button 
+            onClick={handleSave}
+            className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition-all active:scale-95 shadow-md shadow-blue-200"
+          >
             <Save className="w-4 h-4" /> Save <span className="hidden sm:inline">Attendance</span>
           </button>
         </div>
@@ -107,26 +155,26 @@ const AdminAttendanceData = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
           <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Total Students</p>
-          <h3 className="text-3xl font-black text-slate-800">10</h3>
+          <h3 className="text-3xl font-black text-slate-800">{totalStudents}</h3>
         </div>
         <div className="bg-emerald-50 p-5 rounded-2xl border border-emerald-100 flex justify-between items-center">
           <div>
             <p className="text-emerald-700/60 text-xs font-bold uppercase tracking-wider mb-1">Present</p>
-            <h3 className="text-3xl font-black text-emerald-600">7</h3>
+            <h3 className="text-3xl font-black text-emerald-600">{presentCount}</h3>
           </div>
           <div className="bg-emerald-500 text-white p-2.5 rounded-xl shadow-lg shadow-emerald-200"><CheckCircle2 className="w-6 h-6" /></div>
         </div>
         <div className="bg-rose-50 p-5 rounded-2xl border border-rose-100 flex justify-between items-center">
           <div>
             <p className="text-rose-700/60 text-xs font-bold uppercase tracking-wider mb-1">Absent</p>
-            <h3 className="text-3xl font-black text-rose-600">2</h3>
+            <h3 className="text-3xl font-black text-rose-600">{absentCount}</h3>
           </div>
           <div className="bg-rose-500 text-white p-2.5 rounded-xl shadow-lg shadow-rose-200"><XCircle className="w-6 h-6" /></div>
         </div>
         <div className="bg-orange-50 p-5 rounded-2xl border border-orange-100 flex justify-between items-center">
           <div>
             <p className="text-orange-700/60 text-xs font-bold uppercase tracking-wider mb-1">On Leave</p>
-            <h3 className="text-3xl font-black text-orange-600">1</h3>
+            <h3 className="text-3xl font-black text-orange-600">{leaveCount}</h3>
           </div>
           <div className="bg-orange-500 text-white p-2.5 rounded-xl shadow-lg shadow-orange-200"><Clock className="w-6 h-6" /></div>
         </div>
@@ -138,10 +186,10 @@ const AdminAttendanceData = () => {
             <h4 className="font-bold text-slate-800">Attendance Rate</h4>
             <p className="text-xs text-slate-400">Class performance for today</p>
           </div>
-          <span className="text-2xl font-black text-blue-600 tracking-tight">70%</span>
+          <span className="text-2xl font-black text-blue-600 tracking-tight">{attendanceRate}%</span>
         </div>
         <div className="w-full bg-slate-100 h-3.5 rounded-full overflow-hidden">
-          <div className="bg-blue-600 h-full rounded-full transition-all duration-1000 ease-out" style={{ width: "70%" }}></div>
+          <div className="bg-blue-600 h-full rounded-full transition-all duration-1000 ease-out" style={{ width: `${attendanceRate}%` }}></div>
         </div>
       </div>
 
@@ -203,10 +251,6 @@ const AdminAttendanceData = () => {
               ))}
             </tbody>
           </table>
-        </div>
-
-        <div className="sm:hidden p-4 bg-slate-50 text-center border-t border-slate-100">
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Swipe left to see more info →</p>
         </div>
       </div>
     </div>

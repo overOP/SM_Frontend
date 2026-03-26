@@ -10,12 +10,12 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-import StudentSidebar from "../components/Student/StudentSidebar";
-import StudentAttendanceData from "../components/Student/StudentAttendanceData";
-import StudentEventData from "../components/Student/StudentEventData";
-import StudentTimetableData from "../components/Student/StudentTimetableData";
-import StudentAnnouncementData from "../components/Student/StudentAnnouncementData";
-import Homework from "../components/Student/StudentHomework";
+import StudentSidebar from "../components/Student/features/StudentSidebar";
+import StudentAttendanceData from "../components/Student/features/StudentAttendanceData";
+import StudentEventData from "../components/Student/features/StudentEventData";
+import StudentTimetableData from "../components/Student/features/StudentTimetableData";
+import StudentAnnouncementData from "../components/Student/features/StudentAnnouncementData";
+import Homework from "../components/Student/features/StudentHomework";
 
 import {
   sidebarItems,
@@ -44,7 +44,7 @@ const StudentDashboard = () => {
 
   // Notification State
   const [showNotifications, setShowNotifications] = useState(false);
-  const [notifications, setNotifications] = useState<Notification[]>([
+  const [notifications] = useState<Notification[]>([
     { id: 1, title: "New Admission", desc: "Siddharth added to Class 10A", time: "2 mins ago", unread: true },
     { id: 2, title: "Fee Payment", desc: "Monthly fee received from Roll #22", time: "1 hour ago", unread: true },
     { id: 3, title: "Exam Results", desc: "Board exams result are now available", time: "5 hours ago", unread: true },

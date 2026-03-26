@@ -1,5 +1,5 @@
 import { useContext } from "react";
-import { AuthContext } from "../../context/AuthContext";
+import { AuthContext } from "../../../context/AuthContext";
 import type { LucideIcon } from "lucide-react";
 import { ChevronLeft, ChevronRight, Building2, LogOut, X } from "lucide-react";
 import { useNavigate } from "react-router";
@@ -9,17 +9,17 @@ interface SidebarItem {
   label: string;
 }
 
-interface AdminSidebarProps {
+interface TeacherSidebarProps {
   collapsed: boolean;
-  setCollapsed: (value: boolean) => void;
+  setCollapsed: (v: boolean) => void;
   sidebarItems: SidebarItem[];
   mobileOpen: boolean;
-  setMobileOpen: (value: boolean) => void;
+  setMobileOpen: (v: boolean) => void;
   activeItem: string;
-  setActiveItem: (value: string) => void;
+  setActiveItem: (v: string) => void;
 }
 
-const AdminSidebar = ({
+const TeacherSidebar = ({
   collapsed,
   setCollapsed,
   sidebarItems,
@@ -27,9 +27,9 @@ const AdminSidebar = ({
   setMobileOpen,
   activeItem,
   setActiveItem,
-}: AdminSidebarProps) => {
-  const auth = useContext(AuthContext);
+}: TeacherSidebarProps) => {
   const navigate = useNavigate();
+  const auth = useContext(AuthContext);
 
   const handleLogout = () => {
     auth?.logout();
@@ -115,7 +115,7 @@ const AdminSidebar = ({
             {!collapsed && (
               <div>
                 <p className="text-sm font-semibold text-gray-800">Dr. Sarah Johnson</p>
-                <p className="text-xs text-gray-500">Admin</p>
+                <p className="text-xs text-gray-500">Teacher</p>
               </div>
             )}
           </div>
@@ -130,4 +130,4 @@ const AdminSidebar = ({
   );
 };
 
-export default AdminSidebar;
+export default TeacherSidebar;

@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { Menu, Bell, Search } from "lucide-react";
-import ParentSidebar from "../components/Parent/ParentSidebar";
-import ParentOverview from "../components/Parent/ParentOverview";
-import ParentChildProfile from "../components/Parent/ParentChildProfile";
-import ChildAttendance from "../components/Parent/ParentChildAttendance";
-import GradeandReports from "../components/Parent/GradeandReports";
-import ParentAnnouncement from "../components/Parent/ParentAnnouncement";
-import Timetable from "../components/Parent/Timetable";
+import ParentSidebar from "../components/Parent/features/ParentSidebar";
+import ParentOverview from "../components/Parent/features/ParentOverview";
+import ParentChildProfile from "../components/Parent/features/ParentChildProfile";
+import ChildAttendance from "../components/Parent/features/ParentChildAttendance";
+import GradeandReports from "../components/Parent/features/GradeandReports";
+import ParentAnnouncement from "../components/Parent/features/ParentAnnouncement";
+import Timetable from "../components/Parent/features/Timetable";
 
 
 const ParentDashboard = () => {

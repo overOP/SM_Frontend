@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { ChevronDown, Download, Check, Users, ClipboardCheck, TrendingUp, GraduationCap } from "lucide-react";
+import * as XLSX from "xlsx";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   LineChart, Line, PieChart, Pie, Cell,
@@ -75,6 +76,50 @@ const AdminReportData = () => {
     { month: "Apr", value: 93 }, { month: "May", value: 95 },
   ];
 
+  const handleExportReports = () => {
+    const workbook = XLSX.utils.book_new();
+
+    const summaryRows = [
+      { metric: "Class Filter", value: selectedClass },
+      { metric: "Time Range", value: selectedTime },
+      { metric: "Avg Attendance", value: "93.2%" },
+      { metric: "Total Students", value: "1,234" },
+      { metric: "Avg Performance", value: "77.2%" },
+      { metric: "Pass Rate", value: "94.8%" },
+    ];
+
+    XLSX.utils.book_append_sheet(
+      workbook,
+      XLSX.utils.json_to_sheet(summaryRows),
+      "Summary"
+    );
+    XLSX.utils.book_append_sheet(
+      workbook,
+      XLSX.utils.json_to_sheet(attendanceData),
+      "Attendance by Class"
+    );
+    XLSX.utils.book_append_sheet(
+      workbook,
+      XLSX.utils.json_to_sheet(monthlyData),
+      "Monthly Trend"
+    );
+    XLSX.utils.book_append_sheet(
+      workbook,
+      XLSX.utils.json_to_sheet(subjectData),
+      "Subject Performance"
+    );
+    XLSX.utils.book_append_sheet(
+      workbook,
+      XLSX.utils.json_to_sheet(gradeData.map(({ name, value }) => ({ grade: name, percentage: value }))),
+      "Grade Distribution"
+    );
+
+    const safeClass = selectedClass.replace(/\s+/g, "-");
+    const safeTime = selectedTime.replace(/\s+/g, "-");
+    const dateStamp = new Date().toISOString().slice(0, 10);
+    XLSX.writeFile(workbook, `admin-reports-${safeClass}-${safeTime}-${dateStamp}.xlsx`);
+  };
+
   return (
     <div className="p-8 bg-[#f8fafc] min-h-screen font-sans">
       <div className="flex items-center justify-between mb-8">
@@ -128,7 +173,10 @@ const AdminReportData = () => {
           </div>
         </div>
 
-        <button className="flex items-center gap-2 px-4 py-2 bg-white border-gray-100 rounded-lg text-sm font-medium text-slate-700 hover:bg-blue-400 shadow-sm">
+        <button
+          onClick={handleExportReports}
+          className="flex items-center gap-2 px-4 py-2 bg-white border-gray-100 rounded-lg text-sm font-medium text-slate-700 hover:bg-blue-400 shadow-sm"
+        >
           <Download size={16} />
           Export Reports
         </button>

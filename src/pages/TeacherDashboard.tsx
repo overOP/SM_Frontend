@@ -10,17 +10,17 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-import TeacherSidebar from "../components/Teacher/TeacherSidebar";
-import TeacherData from "../components/Teacher/TeacherData";
-import TeacherClassData from "../components/Teacher/TeacherClassData";
-import TeacherStudentData from "../components/Teacher/TeacherStudentData";
-import TeacherTimetableData from "../components/Teacher/TeacherTimetableData";
-import TeacherReportData from "../components/Teacher/TeacherReportData";
-import TeacherSettingsData from "../components/Teacher/TeacherSettingsData";
-import TeacherFeesData from "../components/Teacher/TeacherFeesData";
-import TeacherAttendanceData from "../components/Teacher/TeacherAttendanceData";
-import TeacherEventData from "../components/Teacher/TeacherEventData";
-import TeacherAnnouncementData from "../components/Teacher/TeacherAnnouncementData";
+import TeacherSidebar from "../components/Teacher/features/TeacherSidebar";
+import TeacherData from "../components/Teacher/features/TeacherData";
+import TeacherClassData from "../components/Teacher/features/TeacherClassData";
+import TeacherStudentData from "../components/Teacher/features/TeacherStudentData";
+import TeacherTimetableData from "../components/Teacher/features/TeacherTimetableData";
+import TeacherReportData from "../components/Teacher/features/TeacherReportData";
+import TeacherSettingsData from "../components/Teacher/features/TeacherSettingsData";
+import TeacherFeesData from "../components/Teacher/features/TeacherFeesData";
+import TeacherAttendanceData from "../components/Teacher/features/TeacherAttendanceData";
+import TeacherEventData from "../components/Teacher/features/TeacherEventData";
+import TeacherAnnouncementData from "../components/Teacher/features/TeacherAnnouncementData";
 
 import {
   sidebarItems,
@@ -49,7 +49,7 @@ const TeacherDashboard = () => {
 
   // Notification State
   const [showNotifications, setShowNotifications] = useState(false);
-  const [notifications, setNotifications] = useState<Notification[]>([
+  const [notifications] = useState<Notification[]>([
     { id: 1, title: "New Admission", desc: "Siddharth added to Class 10A", time: "2 mins ago", unread: true },
     { id: 2, title: "Fee Payment", desc: "Monthly fee received from Roll #22", time: "1 hour ago", unread: true },
     { id: 3, title: "Exam Results", desc: "Board exams result are now available", time: "5 hours ago", unread: true },

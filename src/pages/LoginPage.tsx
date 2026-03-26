@@ -3,59 +3,67 @@ import { AuthContext } from "../context/AuthContext";
 import { Building2 } from "lucide-react";
 import { IoEyeOutline, IoEyeOffOutline } from "react-icons/io5";
 import { MdMailOutline } from "react-icons/md";
-import { useNavigate } from "react-router";
+import { useNavigate } from "react-router-dom";
 import gsap from "gsap";
 
 export default function LoginPage() {
   const auth = useContext(AuthContext);
   const navigate = useNavigate();
 
-  // Updated to .com to match your AuthContext USERS mock data
-  const [email, setEmail] = useState("admin@school.com");
+  const [email, setEmail] = useState("admin@edumanage.com");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [activeRole, setActiveRole] = useState("Admin");
 
-  // Refs for GSAP
   const leftRef = useRef<HTMLDivElement>(null);
   const rightRef = useRef<HTMLDivElement>(null);
 
   const handleLogin = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
-    // Call the context login method
     const result = auth?.login(email, password);
 
     if (result?.success) {
-      // Navigate to the route returned by the auth logic
       navigate(`/${result.role}`);
     } else {
-      alert(result?.message);
+      alert(result?.message || "Login failed");
     }
   };
 
   useEffect(() => {
+    const leftEl = leftRef.current;
+    const rightEl = rightRef.current;
+
+    if (!leftEl || !rightEl) return;
+
+    gsap.set([leftEl, rightEl], { opacity: 1 });
+
     const tl = gsap.timeline();
-    tl.from(leftRef.current, {
+    tl.from(leftEl, {
       x: -100,
-      opacity: 0,
       duration: 0.8,
       ease: "power3.out",
+      clearProps: "transform",
     });
     tl.from(
-      rightRef.current,
+      rightEl,
       {
         x: 100,
-        opacity: 0,
         duration: 0.8,
         ease: "power3.out",
+        clearProps: "transform",
       },
       "-=0.5"
     );
+
+    return () => {
+      tl.kill();
+      if (leftEl) gsap.set(leftEl, { opacity: 1 });
+      if (rightEl) gsap.set(rightEl, { opacity: 1 });
+    };
   }, []);
 
   return (
-    <div className="min-h-screen font-sans flex">
+    <div className="min-h-screen font-sans flex bg-white">
       {/* LEFT SECTION */}
       <div
         ref={leftRef}
@@ -85,7 +93,7 @@ export default function LoginPage() {
               "Performance analytics",
             ].map((item, index) => (
               <li key={index} className="flex items-start gap-3">
-                <span className="text-3xl text-blue-500 leading-none">•</span>
+                <span className="text-3xl text-blue-200 leading-none">•</span>
                 <span>{item}</span>
               </li>
             ))}
@@ -96,14 +104,17 @@ export default function LoginPage() {
       {/* RIGHT SECTION */}
       <div
         ref={rightRef}
-        className="flex-1 bg-slate-50 flex items-center justify-center p-8 sm:p-16"
+        className="flex-1 flex items-center justify-center p-8 sm:p-16"
       >
-        <div className="w-full max-w-2xl bg-white p-8 sm:p-16 rounded-2xl shadow-[0_10px_25px_rgba(0,0,0,0.05),0_20px_60px_rgba(0,0,0,0.06)] flex flex-col">
-          <h2 className="text-3xl font-bold text-center mb-2">Welcome Back</h2>
-          <p className="text-center text-slate-500 text-sm mb-8">
+        <div className="w-full max-w-2xl bg-white p-8 sm:p-16 rounded-2xl shadow-lg flex flex-col">
+          <h2 className="text-3xl font-bold text-center mb-2 text-slate-800">
+            Welcome Back
+          </h2>
+          <p className="text-center text-slate-700 text-sm mb-8">
             Sign in to access your portal
           </p>
 
+          {/* ROLE SELECTION */}
           <div className="flex gap-3 mb-6 flex-wrap justify-center">
             {["Admin", "Teacher", "Student", "Parent"].map((role) => (
               <button
@@ -113,7 +124,7 @@ export default function LoginPage() {
                 className={`py-2 px-4 rounded-lg border text-sm font-medium transition-all duration-200 ${
                   activeRole === role
                     ? "bg-gradient-to-r from-blue-600 to-blue-700 text-white border-none shadow-md"
-                    : "bg-slate-100 border-slate-200 hover:bg-slate-200"
+                    : "bg-slate-100 border-slate-300 hover:bg-slate-200 text-slate-700"
                 }`}
               >
                 {role}
@@ -121,50 +132,48 @@ export default function LoginPage() {
             ))}
           </div>
 
-          <div className="bg-slate-100 p-4 rounded-xl text-sm mb-7 text-center lg:text-left">
+          <div className="bg-slate-100 p-4 rounded-xl text-sm mb-7 text-center lg:text-left text-slate-700">
             <strong className="block font-semibold">{activeRole}</strong>
-            <span className="text-slate-600">
-              Full system access and management
-            </span>
+            <span>Full system access and management</span>
           </div>
 
-          {/* FIX: Use handleLogin directly in onSubmit */}
+          {/* LOGIN FORM */}
           <form className="flex flex-col gap-5" onSubmit={handleLogin}>
             <div className="flex flex-col gap-2">
-              <label className="text-sm font-medium">Email</label>
+              <label className="text-sm font-medium text-slate-800">Email</label>
               <div className="relative">
                 <input
                   type="email"
                   value={email}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
-                  placeholder="admin@school.com"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 pr-10 text-sm focus:outline-none focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-200 transition"
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="admin@edumanage.com"
+                  className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 pr-10 text-sm text-slate-800 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200 transition"
                 />
-                <MdMailOutline className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg" />
+                <MdMailOutline className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 text-lg" />
               </div>
             </div>
 
             <div className="flex flex-col gap-2">
-              <label className="text-sm font-medium">Password</label>
+              <label className="text-sm font-medium text-slate-800">Password</label>
               <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
                   value={password}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
+                  onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter your password"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 pr-10 text-sm focus:outline-none focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-200 transition"
+                  className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 pr-10 text-sm text-slate-800 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-200 transition"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 text-lg"
                 >
                   {showPassword ? <IoEyeOffOutline /> : <IoEyeOutline />}
                 </button>
               </div>
             </div>
 
-            <div className="flex justify-between items-center text-sm">
+            <div className="flex justify-between items-center text-sm text-slate-700">
               <label className="flex items-center gap-2">
                 <input type="checkbox" defaultChecked />
                 Remember me
@@ -182,8 +191,8 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <p className="text-center text-xs text-slate-400 mt-6">
-            Demo: Use admin@school.com / admin123
+          <p className="text-center text-slate-600 text-xs mt-6">
+            Demo: Use admin@edumanage.com / admin123
           </p>
         </div>
       </div>

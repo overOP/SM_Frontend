@@ -1,7 +1,7 @@
 import { useState, useContext } from "react";
 import type { LucideIcon } from "lucide-react";
 import { Plus, Search, Calendar, BookOpen, Clock, CheckCircle, Circle, Edit, Trash2, MoreHorizontal } from "lucide-react";
-import { AuthContext } from "../../context/AuthContext";
+import { AuthContext } from "../../../context/AuthContext";
 
 type HomeworkStatus = "pending" | "submitted" | "graded";
 

@@ -10,18 +10,18 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-import AdminSidebar from "../components/Admin/AdminSidebar.tsx";
-import AdminTeacherData from "../components/Admin/AdminTeacherData.tsx";
-import AdminStudentData from "../components/Admin/AdminStudentData.tsx";
-import AdminClassData from "../components/Admin/AdminClassData.tsx";
-import AdminFeesData from "../components/Admin/AdminFeesData.tsx";
-import AdminAttendanceData from "../components/Admin/AdminAttendanceData.tsx";
-import AdminEventData from "../components/Admin/AdminEventData.tsx";
-import AdminAnnouncementData from "../components/Admin/AdminAnnouncementData.tsx";
-import AdminReportData from "../components/Admin/AdminReportData.tsx";
-import AdminSettingsData from "../components/Admin/AdminSettingsData.tsx";
-import AdminTimetableData from "../components/Admin/AdminTimetableData.tsx";
-import AdminResultData from "../components/Admin/AdminResultData.tsx";
+import AdminSidebar from "../components/Admin/features/AdminSidebar";
+import AdminTeacherData from "../components/Admin/features/AdminTeacherData";
+import AdminStudentData from "../components/Admin/features/AdminStudentData";
+import AdminClassData from "../components/Admin/features/AdminClassData";
+import AdminFeesData from "../components/Admin/features/AdminFeesData";
+import AdminAttendanceData from "../components/Admin/features/AdminAttendanceData";
+import AdminEventData from "../components/Admin/features/AdminEventData";
+import AdminAnnouncementData from "../components/Admin/features/AdminAnnouncementData";
+import AdminReportData from "../components/Admin/features/AdminReportData";
+import AdminSettingsData from "../components/Admin/features/AdminSettingsData";
+import AdminTimetableData from "../components/Admin/features/AdminTimetableData";
+import AdminResultData from "../components/Admin/features/AdminResultData";
 
 import {
   sidebarItems,
@@ -40,6 +40,7 @@ interface Notification {
 
 interface HeaderActionsProps {
   placeholder?: string;
+  sectionKey: string;
 }
 
 const AdminDashboard = () => {
@@ -47,10 +48,19 @@ const AdminDashboard = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [activeItem, setActiveItem] = useState("Dashboard");
   const [dateInfo, setDateInfo] = useState({ day: "", fullDate: "" });
+  const [searchFilters, setSearchFilters] = useState<Record<string, string>>(() => {
+    const stored = localStorage.getItem("admin-search-filters");
+    if (!stored) return {};
+    try {
+      return JSON.parse(stored) as Record<string, string>;
+    } catch {
+      return {};
+    }
+  });
 
   // Notification State
   const [showNotifications, setShowNotifications] = useState(false);
-  const [notifications, setNotifications] = useState<Notification[]>([
+  const [notifications] = useState<Notification[]>([
     { id: 1, title: "New Admission", desc: "Siddharth added to Class 10A", time: "2 mins ago", unread: true },
     { id: 2, title: "Fee Payment", desc: "Monthly fee received from Roll #22", time: "1 hour ago", unread: true },
     { id: 3, title: "Exam Results", desc: "Board exams result are now available", time: "5 hours ago", unread: true },
@@ -65,8 +75,12 @@ const AdminDashboard = () => {
     });
   }, []);
 
+  useEffect(() => {
+    localStorage.setItem("admin-search-filters", JSON.stringify(searchFilters));
+  }, [searchFilters]);
+
   /* --- REUSABLE HEADER ACTIONS --- */
-  const HeaderActions = ({ placeholder = "Search..." }: HeaderActionsProps) => (
+  const HeaderActions = ({ placeholder = "Search...", sectionKey }: HeaderActionsProps) => (
     <div className="flex flex-1 items-center justify-between">
       <div className="hidden md:block">
         <h1 className="text-xl font-bold text-slate-800">{activeItem}</h1>
@@ -81,6 +95,13 @@ const AdminDashboard = () => {
           <input
             type="text"
             placeholder={placeholder}
+            value={searchFilters[sectionKey] ?? ""}
+            onChange={(e) =>
+              setSearchFilters((prev) => ({
+                ...prev,
+                [sectionKey]: e.target.value,
+              }))
+            }
             className="pl-10 pr-4 py-2 w-48 lg:w-64 rounded-xl border border-gray-100 bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
           />
         </div>
@@ -133,10 +154,10 @@ const AdminDashboard = () => {
 
   const renderHeaderContent = () => {
     switch (activeItem) {
-      case "Teachers": return <HeaderActions placeholder="Search teachers..." />;
-      case "Students": return <HeaderActions placeholder="Search students..." />;
+      case "Teachers": return <HeaderActions placeholder="Search teachers..." sectionKey="Teachers" />;
+      case "Students": return <HeaderActions placeholder="Search students..." sectionKey="Students" />;
       case "Dashboard":
-      default: return <HeaderActions placeholder="Search everything..." />;
+      default: return <HeaderActions placeholder="Search everything..." sectionKey={activeItem} />;
     }
   };
 
