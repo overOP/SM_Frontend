@@ -15,6 +15,7 @@ import {
   Home
 } from "lucide-react";
 import { useNavigate } from "react-router";
+import { Button } from "../ui";
 
 interface SidebarItem {
   icon: LucideIcon;
@@ -48,6 +49,7 @@ const ParentSidebar = ({
     { icon: GraduationCap, label: "Grades and Reports" },
     { icon: Clock, label: "Timetable" },
     { icon: Megaphone, label: "Announcements" },
+    { icon: User, label: "ExamResults" },
   ];
 
   const handleLogout = () => {
@@ -96,9 +98,9 @@ const ParentSidebar = ({
             {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
           </button>
 
-          <button onClick={() => setMobileOpen(false)} className="ml-auto text-gray-500 lg:hidden">
+          <Button onClick={() => setMobileOpen(false)} className="ml-auto text-gray-500 lg:hidden">
             <X size={20} />
-          </button>
+          </Button>
         </div>
 
         <nav className="flex-1 p-3 space-y-1 overflow-y-auto mt-4">

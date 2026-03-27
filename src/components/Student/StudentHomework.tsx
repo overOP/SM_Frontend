@@ -1,210 +1,292 @@
-import { useState, useContext } from "react";
-import type { LucideIcon } from "lucide-react";
-import { Plus, Search, Calendar, BookOpen, Clock, CheckCircle, Circle, Edit, Trash2, MoreHorizontal } from "lucide-react";
-import { AuthContext } from "../../context/AuthContext";
+import React, { useState, useMemo } from "react";
+import { 
+  Search, 
+  Clock, 
+  FileUp, 
+  BookOpen, 
+  Calendar, 
+  CheckCircle2, 
+  X, 
+  AlertCircle,
+  Filter
+} from "lucide-react";
 
-type HomeworkStatus = "pending" | "submitted" | "graded";
+// --- Custom Hook: useDebounce ---
+import { useDebounce } from "../../hooks/useDebounce";
 
-interface HomeworkItem {
+// --- Types & Interfaces ---
+export type HomeworkStatus = "pending" | "submitted" | "graded" | "overdue";
+
+export interface HomeworkItem {
   id: number;
   subject: string;
   title: string;
-  description: string;
-  class: string;
-  teacher: string;
   dueDate: string;
-  assignedDate: string;
   status: HomeworkStatus;
+  priority: 'high' | 'medium' | 'low';
+  description: string;
 }
 
-interface StatusConfigEntry {
-  label: string;
-  color: string;
-  Icon: LucideIcon;
-}
+// --- Reusable UI Imports (Mocking your library structure) ---
+import { 
+  Card, 
+  StatCard, 
+  DataTable, 
+  StatusBadge, 
+  Button, 
+  Input,
 
-const homeworkData: HomeworkItem[] = [
-  { id: 1, subject: "Mathematics", title: "Quadratic Equations Practice", description: "Solve exercises 1-20 from Chapter 5. Show all working steps.", class: "10A", teacher: "Dr. Sarah Johnson", dueDate: "2025-12-25", assignedDate: "2025-12-20", status: "pending" },
-  { id: 2, subject: "Physics", title: "Newton's Laws Report", description: "Write a 500-word report on real-world applications of Newton's laws of motion.", class: "10A", teacher: "Prof. Michael Chen", dueDate: "2025-12-27", assignedDate: "2025-12-19", status: "pending" },
-  { id: 3, subject: "English", title: "Essay Writing", description: 'Write an essay on "The Impact of Technology on Modern Education" (800-1000 words).', class: "10A", teacher: "Ms. Emily Davis", dueDate: "2025-12-24", assignedDate: "2025-12-18", status: "submitted" },
-  { id: 4, subject: "Chemistry", title: "Lab Report: Titration", description: "Complete the lab report for the acid-base titration experiment conducted in class.", class: "10A", teacher: "Mr. Robert Wilson", dueDate: "2025-12-23", assignedDate: "2025-12-17", status: "graded" },
-  { id: 5, subject: "Biology", title: "Cell Division Diagrams", description: "Draw and label diagrams for mitosis and meiosis. Include all phases.", class: "10A", teacher: "Dr. Lisa Anderson", dueDate: "2025-12-26", assignedDate: "2025-12-20", status: "pending" },
-];
+} from '../ui';
+import { Modal } from '../ui/Modal';
+const StudentHomework: React.FC = () => {
+  // State Management
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [selectedTask, setSelectedTask] = useState<HomeworkItem | null>(null);
+  
+  // UX: Debounce search to prevent UI lag
+  const debouncedSearch = useDebounce<string>(searchTerm, 300);
 
-const subjectColors: Record<string, string> = {
-  Mathematics: "bg-blue-100 text-blue-700 border border-blue-200",
-  Physics: "bg-purple-100 text-purple-700 border border-purple-200",
-  English: "bg-yellow-100 text-yellow-700 border border-yellow-200",
-  Chemistry: "bg-green-100 text-green-700 border border-green-200",
-  Biology: "bg-red-100 text-red-700 border border-red-200",
-};
+  // Mock Data (In a real app, this comes from an API/Context)
+  const homeworkData: HomeworkItem[] = [
+    { 
+      id: 1, 
+      subject: "Mathematics", 
+      title: "Quadratic Equations Practice", 
+      dueDate: "2026-03-28", 
+      status: "pending", 
+      priority: "high",
+      description: "Complete exercises 5.1 to 5.4. Focus on the discriminant formula."
+    },
+    { 
+      id: 2, 
+      subject: "Physics", 
+      title: "Newton's Laws Lab Report", 
+      dueDate: "2026-03-30", 
+      status: "pending", 
+      priority: "medium",
+      description: "Write a 500-word summary of the friction experiment conducted on Tuesday."
+    },
+    { 
+      id: 3, 
+      subject: "English", 
+      title: "Modern Education Essay", 
+      dueDate: "2026-03-25", 
+      status: "submitted", 
+      priority: "low",
+      description: "Final draft of the persuasive essay regarding digital literacy."
+    },
+  ];
 
-const statusConfig: Record<HomeworkStatus, StatusConfigEntry> = {
-  pending: { label: "Pending", color: "bg-yellow-100 text-yellow-700", Icon: Circle },
-  submitted: { label: "Submitted", color: "bg-blue-100 text-blue-700", Icon: CheckCircle },
-  graded: { label: "Graded", color: "bg-green-100 text-green-700", Icon: CheckCircle },
-};
+  // Logic: Filtered Data for DataTable
+  const filteredData = useMemo<HomeworkItem[]>(() => {
+    return homeworkData.filter((hw) => 
+      hw.title.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+      hw.subject.toLowerCase().includes(debouncedSearch.toLowerCase())
+    );
+  }, [debouncedSearch]);
 
-export default function Homework() {
-  const auth = useContext(AuthContext);
-  const user = auth?.user;
-  const [searchQuery, setSearchQuery] = useState("");
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
-
-  const filteredHomework = homeworkData.filter(
-    (hw) => hw.title.toLowerCase().includes(searchQuery.toLowerCase()) || hw.subject.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const formatDate = (dateStr: string) => new Date(dateStr).toLocaleDateString("en-US", { month: "short", day: "numeric" });
-
-  const getDaysRemaining = (dueDate: string) => {
-    const today = new Date();
-    const due = new Date(dueDate);
-    return Math.ceil((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  const handleActionClick = (task: HomeworkItem): void => {
+    setSelectedTask(task);
+    setIsModalOpen(true);
   };
 
-  return (
-    <div className="p-6 space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-800">Homework</h1>
-        <p className="text-sm text-gray-500">{user?.role === "teacher" ? "Manage homework assignments" : "View your assignments"}</p>
-      </div>
-
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative w-full sm:w-80">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search homework..."
-            value={searchQuery}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-500"
-          />
-        </div>
-        {user?.role === "teacher" && (
-          <button onClick={() => setIsAddDialogOpen(true)} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition">
-            <Plus className="h-4 w-4" /> Assign Homework
-          </button>
-        )}
-      </div>
-
-      {isAddDialogOpen && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6">
-            <h2 className="text-lg font-bold mb-1">Assign New Homework</h2>
-            <p className="text-sm text-gray-500 mb-4">Create a new homework assignment for your class.</p>
-            <form className="space-y-4">
-              <div className="flex flex-col gap-1">
-                <label className="text-sm font-medium">Title</label>
-                <input type="text" placeholder="Homework title" className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200" />
-              </div>
-              <div className="flex flex-col gap-1">
-                <label className="text-sm font-medium">Description</label>
-                <textarea rows={3} placeholder="Homework instructions..." className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200 resize-none" />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="flex flex-col gap-1">
-                  <label className="text-sm font-medium">Subject</label>
-                  <select className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200">
-                    <option value="">Select subject</option>
-                    <option value="mathematics">Mathematics</option>
-                    <option value="physics">Physics</option>
-                    <option value="chemistry">Chemistry</option>
-                    <option value="biology">Biology</option>
-                    <option value="english">English</option>
-                  </select>
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className="text-sm font-medium">Class</label>
-                  <select className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200">
-                    <option value="">Select class</option>
-                    <option value="10A">Class 10A</option>
-                    <option value="10B">Class 10B</option>
-                    <option value="9A">Class 9A</option>
-                    <option value="9B">Class 9B</option>
-                  </select>
-                </div>
-              </div>
-              <div className="flex flex-col gap-1">
-                <label className="text-sm font-medium">Due Date</label>
-                <input type="date" className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200" />
-              </div>
-              <div className="flex justify-end gap-3 pt-2">
-                <button type="button" onClick={() => setIsAddDialogOpen(false)} className="px-4 py-2 text-sm border border-gray-200 rounded-lg hover:bg-gray-50 transition">Cancel</button>
-                <button type="submit" className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">Assign</button>
-              </div>
-            </form>
+  // DataTable Column Definitions
+  const columns = [
+    { 
+      header: 'Assignment', 
+      accessor: 'title' as keyof HomeworkItem,
+      render: (row: HomeworkItem) => (
+        <div className="py-2">
+          <p className="font-bold text-slate-800 leading-tight group-hover:text-blue-600 transition-colors">
+            {row.title}
+          </p>
+          <div className="flex items-center gap-2 mt-1">
+            <span className="text-[10px] font-black text-blue-500 uppercase tracking-widest bg-blue-50 px-2 py-0.5 rounded">
+              {row.subject}
+            </span>
           </div>
         </div>
-      )}
+      )
+    },
+    { 
+      header: 'Due Date', 
+      accessor: 'dueDate' as keyof HomeworkItem,
+      render: (row: HomeworkItem) => (
+        <div className="flex items-center gap-2 text-slate-500 font-bold text-[11px] uppercase tracking-tighter">
+          <Calendar size={14} className="text-slate-300" />
+          {row.dueDate}
+        </div>
+      )
+    },
+    { 
+      header: 'Status', 
+      accessor: 'status' as keyof HomeworkItem,
+      render: (row: HomeworkItem) => (
+        <StatusBadge 
+          status={row.status} 
+          variant={row.status === 'pending' ? 'warning' : row.status === 'submitted' ? 'info' : 'success'} 
+        />
+      )
+    },
+    {
+      header: 'Action',
+      render: (row: HomeworkItem) => (
+        <Button 
+          variant={row.status === 'pending' ? 'default' : 'outline'} 
+          size="sm" 
+          className="rounded-xl h-9 px-6 font-bold text-[11px] uppercase tracking-widest transition-all hover:scale-105"
+          onClick={() => handleActionClick(row)}
+        >
+          {row.status === 'pending' ? 'Submit Now' : 'Details'}
+        </Button>
+      )
+    }
+  ];
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        {(["pending", "submitted", "graded"] as HomeworkStatus[]).map((status) => {
-          const colorMap: Record<HomeworkStatus, { border: string; text: string }> = {
-            pending: { border: "border-l-yellow-400", text: "text-yellow-600" },
-            submitted: { border: "border-l-blue-500", text: "text-blue-600" },
-            graded: { border: "border-l-green-500", text: "text-green-600" },
-          };
-          return (
-            <div key={status} className={`bg-white rounded-xl shadow-sm border-l-4 p-5 ${colorMap[status].border}`}>
-              <p className="text-sm text-gray-500 capitalize">{status}</p>
-              <p className={`text-2xl font-bold ${colorMap[status].text}`}>{filteredHomework.filter((h) => h.status === status).length}</p>
-            </div>
-          );
-        })}
+  return (
+    <div className="max-w-7xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      
+      {/* 1. Dynamic Header */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+        <div>
+          <h2 className="text-4xl font-black text-slate-900 tracking-tight">Homework Hub</h2>
+          <p className="text-slate-400 font-medium mt-1">Manage your academic tasks and track submission progress.</p>
+        </div>
+        
+        <div className="flex items-center gap-3">
+          <div className="relative group">
+            <Input 
+              placeholder="Search assignments..." 
+              icon={Search}
+              value={searchTerm}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
+              className="w-full md:w-80 bg-white border-slate-200 focus:ring-4 focus:ring-blue-50 transition-all rounded-2xl pr-10"
+            />
+            {searchTerm && (
+              <button 
+                onClick={() => setSearchTerm("")}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-600 transition-colors"
+              >
+                <X size={16} />
+              </button>
+            )}
+          </div>
+          <Button variant="outline" className="rounded-2xl border-slate-200 bg-white hidden md:flex">
+             <Filter size={18} className="mr-2" /> Filter
+          </Button>
+        </div>
       </div>
 
-      <div className="grid gap-4">
-        {filteredHomework.map((homework) => {
-          const daysRemaining = getDaysRemaining(homework.dueDate);
-          const isOverdue = daysRemaining < 0;
-          const isDueSoon = daysRemaining <= 2 && daysRemaining >= 0;
-          const { label, color, Icon } = statusConfig[homework.status];
+      {/* 2. Key Metrics */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <StatCard title="Total Assigned" value="08" icon={BookOpen} />
+        <StatCard 
+          title="Action Required" 
+          value={homeworkData.filter(h => h.status === 'pending').length.toString()} 
+          icon={Clock} 
+          colorClass="text-amber-600" 
+          bgClass="bg-amber-50" 
+        />
+        <StatCard 
+          title="Successfully Graded" 
+          value="04" 
+          icon={CheckCircle2} 
+          colorClass="text-emerald-600" 
+          bgClass="bg-emerald-50" 
+        />
+      </div>
 
-          return (
-            <div key={homework.id} className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-all duration-200">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                <div className="flex-1 space-y-2">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${subjectColors[homework.subject] ?? ""}`}>{homework.subject}</span>
-                    <span className={`text-xs font-medium px-2.5 py-1 rounded-full flex items-center gap-1 ${color}`}>
-                      <Icon className="h-3 w-3" /> {label}
-                    </span>
-                    {isOverdue && homework.status === "pending" && <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-red-100 text-red-600">Overdue</span>}
-                    {isDueSoon && homework.status === "pending" && <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-yellow-100 text-yellow-600">Due Soon</span>}
-                  </div>
-                  <h3 className="font-semibold text-lg text-gray-800">{homework.title}</h3>
-                  <p className="text-sm text-gray-500">{homework.description}</p>
-                  <div className="flex flex-wrap gap-4 text-sm text-gray-400 pt-2">
-                    <div className="flex items-center gap-1"><BookOpen className="h-4 w-4" /><span>Class {homework.class}</span></div>
-                    <div className="flex items-center gap-1"><Calendar className="h-4 w-4" /><span>Assigned: {formatDate(homework.assignedDate)}</span></div>
-                    <div className="flex items-center gap-1"><Clock className="h-4 w-4" /><span>Due: {formatDate(homework.dueDate)}</span></div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  {user?.role === "student" && homework.status === "pending" && (
-                    <button className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">Submit</button>
-                  )}
-                  {user?.role === "teacher" && (
-                    <div className="relative">
-                      <button onClick={() => setOpenDropdownId(openDropdownId === homework.id ? null : homework.id)} className="p-1.5 rounded-lg hover:bg-gray-100 transition">
-                        <MoreHorizontal className="h-4 w-4 text-gray-500" />
-                      </button>
-                      {openDropdownId === homework.id && (
-                        <div className="absolute right-0 top-8 bg-white border border-gray-100 rounded-xl shadow-lg z-10 w-32">
-                          <button className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-gray-50 transition"><Edit className="h-4 w-4" /> Edit</button>
-                          <button className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-500 hover:bg-red-50 transition"><Trash2 className="h-4 w-4" /> Delete</button>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
+      <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
+        
+        {/* 3. Main Task Table */}
+        <div className="xl:col-span-3">
+          <Card noPadding className="border-none shadow-2xl shadow-slate-200/50 overflow-hidden">
+            <div className="p-8 border-b border-slate-50 bg-white flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-2 h-8 bg-blue-600 rounded-full" />
+                <h3 className="font-black text-slate-800 uppercase tracking-[0.2em] text-xs">Current Assignments</h3>
               </div>
+              <StatusBadge status="Term 2 Active" variant="info" />
             </div>
-          );
-        })}
+            
+            <DataTable<HomeworkItem> columns={columns} data={filteredData} />
+            
+            {filteredData.length === 0 && (
+              <div className="py-24 text-center">
+                 <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 border-2 border-dashed border-slate-100">
+                    <Search size={32} className="text-slate-200" />
+                 </div>
+                 <p className="text-slate-400 font-black uppercase tracking-widest text-[10px]">No results matching "{searchTerm}"</p>
+              </div>
+            )}
+          </Card>
+        </div>
+
+        {/* 4. Submission Sidebar */}
+        <div className="space-y-6">
+          <Card title="Quick Guidelines" className="border-none shadow-xl">
+             <div className="space-y-6">
+                <div className="flex gap-4">
+                   <div className="w-10 h-10 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-lg shadow-blue-200 shrink-0">
+                      <FileUp size={20} />
+                   </div>
+                   <div>
+                      <h4 className="font-bold text-slate-900 text-sm">Upload Policy</h4>
+                      <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">PDF format only. Ensure your student ID is in the footer.</p>
+                   </div>
+                </div>
+
+                <div className="p-5 rounded-3xl bg-rose-50 border border-rose-100 flex gap-4">
+                  <AlertCircle size={20} className="text-rose-600 shrink-0" />
+                  <p className="text-[11px] text-rose-800/80 leading-relaxed font-bold">
+                    Late submissions carry a 10% mark penalty per day.
+                  </p>
+                </div>
+                
+                <Button className="w-full rounded-2xl py-7 bg-slate-900 text-white font-black uppercase tracking-[0.2em] text-[10px] hover:shadow-2xl transition-all">
+                   Archive History
+                </Button>
+             </div>
+          </Card>
+        </div>
       </div>
+
+      {/* 5. The Submission Modal */}
+      <Modal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)}
+        title="Submit Work"
+      >
+        <div className="space-y-6 p-2">
+          {selectedTask && (
+            <div className="p-6 rounded-[2rem] bg-slate-50 border border-slate-100">
+              <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest">{selectedTask.subject}</span>
+              <h4 className="font-black text-slate-900 text-lg leading-tight mt-1">{selectedTask.title}</h4>
+              <p className="text-xs text-slate-500 mt-2 leading-relaxed">{selectedTask.description}</p>
+            </div>
+          )}
+
+          <div className="border-4 border-dashed border-slate-100 rounded-[2.5rem] p-12 flex flex-col items-center justify-center group hover:border-blue-200 hover:bg-blue-50/50 transition-all cursor-pointer">
+             <div className="w-20 h-20 bg-slate-100 rounded-3xl flex items-center justify-center text-slate-300 group-hover:bg-blue-600 group-hover:text-white transition-all shadow-sm">
+                <FileUp size={40} />
+             </div>
+             <p className="mt-6 font-black text-slate-800 text-lg">Upload Solution</p>
+             <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">Click or drag to upload</p>
+          </div>
+
+          <div className="flex gap-4 pt-4">
+            <Button variant="outline" className="flex-1 rounded-2xl h-12 font-black uppercase tracking-widest text-[10px]" onClick={() => setIsModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button className="flex-1 bg-blue-600 rounded-2xl h-12 shadow-xl shadow-blue-200 font-black uppercase tracking-widest text-[10px]">
+              Confirm Submission
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
-}
+};
+
+export default StudentHomework;

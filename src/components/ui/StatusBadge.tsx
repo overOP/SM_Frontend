@@ -5,6 +5,7 @@ type BadgeVariant = 'success' | 'danger' | 'warning' | 'info' | 'default';
 interface StatusBadgeProps {
   status: string;
   variant?: BadgeVariant;
+className?: string;
 }
 
 const StatusBadge: React.FC<StatusBadgeProps> = ({ status, variant = "default" }) => {

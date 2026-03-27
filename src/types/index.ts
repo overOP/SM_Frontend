@@ -16,3 +16,4 @@ export interface LoginResult {
   message?: string;
   role?: Role;
 }
+export * from "./schema";

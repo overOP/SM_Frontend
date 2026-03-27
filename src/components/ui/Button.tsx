@@ -20,7 +20,7 @@ export const Button: React.FC<ButtonProps> = ({
   
   const variants: Record<string, string> = {
     primary: "bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500 shadow-sm",
-    secondary: "bg-slate-800 text-white hover:bg-slate-900 focus:ring-slate-500",
+    secondary: "bg-slate-800  hover:bg-slate-900 focus:ring-slate-500",
     outline: "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 focus:ring-blue-500",
     ghost: "text-slate-600 hover:bg-slate-100 focus:ring-slate-500",
     danger: "bg-rose-500 text-white hover:bg-rose-600 focus:ring-rose-500"
