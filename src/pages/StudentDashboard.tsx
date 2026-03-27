@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import  { useState, useMemo } from "react";
 import { Search, Bell, Menu, ChevronRight, TrendingUp, Sparkles, Clock } from "lucide-react";
 import {
   AreaChart,
@@ -49,7 +49,6 @@ interface HeaderProps {
   placeholder?: string;
 }
 
-/* --- 1. SUB-COMPONENTS (Defined outside to prevent re-render errors) --- */
 
 const DashboardHeader = ({ 
   activeItem, unreadCount, showNotifications, setShowNotifications, notifications, dateInfo, setMobileOpen, placeholder = "Search everything..." 
@@ -238,11 +237,11 @@ const StudentDashboard = () => {
     };
   }, []);
 
-  const notifications: Notification[] = [
+  const notifications= useMemo(() => [
     { id: 1, title: "New Admission", desc: "Siddharth added to Class 10A", time: "2 mins ago", unread: true },
     { id: 2, title: "Fee Payment", desc: "Monthly fee received", time: "1 hour ago", unread: true },
     { id: 3, title: "Exam Results", desc: "Board exams result available", time: "5 hours ago", unread: true },
-  ];
+  ], []);
 
   const unreadCount = useMemo(() => notifications.filter(n => n.unread).length, [notifications]);
 
