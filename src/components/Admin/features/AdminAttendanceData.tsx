@@ -20,19 +20,61 @@ interface Student {
   color: string;
 }
 
+const classStudents: Record<string, Omit<Student, "status">[]> = {
+  "Class 10A": [
+    { id: 1,  name: "Alex Thompson",   roll: "10A001", initials: "AT", color: "bg-blue-100 text-blue-600" },
+    { id: 2,  name: "Emma Watson",     roll: "10A002", initials: "EW", color: "bg-purple-100 text-purple-600" },
+    { id: 3,  name: "John Doe",        roll: "10A003", initials: "JD", color: "bg-emerald-100 text-emerald-600" },
+    { id: 4,  name: "Sarah Connor",    roll: "10A004", initials: "SC", color: "bg-rose-100 text-rose-600" },
+    { id: 5,  name: "Michael James",   roll: "10A005", initials: "MJ", color: "bg-orange-100 text-orange-600" },
+    { id: 6,  name: "Priya Sharma",    roll: "10A006", initials: "PS", color: "bg-teal-100 text-teal-600" },
+    { id: 7,  name: "Rahul Verma",     roll: "10A007", initials: "RV", color: "bg-indigo-100 text-indigo-600" },
+  ],
+  "Class 10B": [
+    { id: 1,  name: "Sneha Patel",     roll: "10B001", initials: "SP", color: "bg-pink-100 text-pink-600" },
+    { id: 2,  name: "Arjun Mehta",     roll: "10B002", initials: "AM", color: "bg-blue-100 text-blue-600" },
+    { id: 3,  name: "Kavya Nair",      roll: "10B003", initials: "KN", color: "bg-emerald-100 text-emerald-600" },
+    { id: 4,  name: "Dev Kapoor",      roll: "10B004", initials: "DK", color: "bg-violet-100 text-violet-600" },
+    { id: 5,  name: "Ananya Singh",    roll: "10B005", initials: "AS", color: "bg-orange-100 text-orange-600" },
+  ],
+  "Class 9A": [
+    { id: 1,  name: "Riya Joshi",      roll: "9A001",  initials: "RJ", color: "bg-cyan-100 text-cyan-600" },
+    { id: 2,  name: "Karan Mishra",    roll: "9A002",  initials: "KM", color: "bg-lime-100 text-lime-600" },
+    { id: 3,  name: "Tanvi Gupta",     roll: "9A003",  initials: "TG", color: "bg-rose-100 text-rose-600" },
+    { id: 4,  name: "Harsh Pandey",    roll: "9A004",  initials: "HP", color: "bg-blue-100 text-blue-600" },
+    { id: 5,  name: "Simran Kaur",     roll: "9A005",  initials: "SK", color: "bg-purple-100 text-purple-600" },
+    { id: 6,  name: "Aditya Kumar",    roll: "9A006",  initials: "AK", color: "bg-amber-100 text-amber-600" },
+    { id: 7,  name: "Pooja Yadav",     roll: "9A007",  initials: "PY", color: "bg-teal-100 text-teal-600" },
+    { id: 8,  name: "Nikhil Saxena",   roll: "9A008",  initials: "NS", color: "bg-indigo-100 text-indigo-600" },
+    { id: 9,  name: "Shruti Agarwal",  roll: "9A009",  initials: "SA", color: "bg-emerald-100 text-emerald-600" },
+  ],
+  "Class 9B": [
+    { id: 1,  name: "Rohan Tiwari",    roll: "9B001",  initials: "RT", color: "bg-orange-100 text-orange-600" },
+    { id: 2,  name: "Meera Pillai",    roll: "9B002",  initials: "MP", color: "bg-pink-100 text-pink-600" },
+    { id: 3,  name: "Aarav Dubey",     roll: "9B003",  initials: "AD", color: "bg-blue-100 text-blue-600" },
+    { id: 4,  name: "Ishaan Reddy",    roll: "9B004",  initials: "IR", color: "bg-violet-100 text-violet-600" },
+    { id: 5,  name: "Nidhi Rawat",     roll: "9B005",  initials: "NR", color: "bg-lime-100 text-lime-600" },
+    { id: 6,  name: "Vikram Choudhary",roll: "9B006",  initials: "VC", color: "bg-rose-100 text-rose-600" },
+  ],
+  "Class 8A": [
+    { id: 1,  name: "Zara Khan",       roll: "8A001",  initials: "ZK", color: "bg-fuchsia-100 text-fuchsia-600" },
+    { id: 2,  name: "Yash Trivedi",    roll: "8A002",  initials: "YT", color: "bg-blue-100 text-blue-600" },
+    { id: 3,  name: "Lakshmi Iyer",    roll: "8A003",  initials: "LI", color: "bg-emerald-100 text-emerald-600" },
+    { id: 4,  name: "Omar Siddiqui",   roll: "8A004",  initials: "OS", color: "bg-orange-100 text-orange-600" },
+  ],
+};
+
+function buildStudents(cls: string): Student[] {
+  return (classStudents[cls] ?? []).map((s) => ({ ...s, status: "Present" as AttendanceStatus }));
+}
+
 const AdminAttendanceData = () => {
   const [selectedClass, setSelectedClass] = useState("Class 10A");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const classes = ["Class 10A", "Class 10B", "Class 9A", "Class 9B", "Class 8A"];
 
-  const [students, setStudents] = useState<Student[]>([
-    { id: 1, name: "Alex Thompson", roll: "STU001", status: "Present", initials: "AT", color: "bg-blue-100 text-blue-600" },
-    { id: 2, name: "Emma Watson", roll: "STU002", status: "Present", initials: "EW", color: "bg-purple-100 text-purple-600" },
-    { id: 3, name: "John Doe", roll: "STU003", status: "Absent", initials: "JD", color: "bg-emerald-100 text-emerald-600" },
-    { id: 4, name: "Sarah Connor", roll: "STU004", status: "Present", initials: "SC", color: "bg-rose-100 text-rose-600" },
-    { id: 5, name: "Michael J.", roll: "STU005", status: "On Leave", initials: "MJ", color: "bg-orange-100 text-orange-600" },
-  ]);
+  const [students, setStudents] = useState<Student[]>(() => buildStudents("Class 10A"));
 
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
   const formattedDate = new Date(selectedDate).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" });
@@ -94,7 +136,7 @@ const AdminAttendanceData = () => {
                 {classes.map((cls) => (
                   <div
                     key={cls}
-                    onClick={() => { setSelectedClass(cls); setIsDropdownOpen(false); }}
+                    onClick={() => { setSelectedClass(cls); setStudents(buildStudents(cls)); setIsDropdownOpen(false); }}
                     className={`px-4 py-2.5 text-sm cursor-pointer transition-colors hover:bg-slate-50 ${cls === selectedClass ? "bg-blue-50 text-blue-600 font-bold" : "text-slate-600"}`}
                   >
                     {cls}

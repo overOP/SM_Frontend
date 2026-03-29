@@ -1,4 +1,4 @@
-import { Search, Plus, Pin, Calendar, User } from "lucide-react";
+import { Search, Pin, Calendar, User } from "lucide-react";
 
 interface PinnedAnnouncement {
   id: number;
@@ -39,9 +39,6 @@ const TeacherAnnouncementData = () => {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input type="text" placeholder="Search announcement..." className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" />
         </div>
-        <button className="flex items-center justify-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-xl font-semibold shadow-md hover:bg-blue-700 transition-all active:scale-95">
-          <Plus className="w-4 h-4" /> New Announcement
-        </button>
       </div>
 
       <div className="flex items-center gap-2 mb-6">

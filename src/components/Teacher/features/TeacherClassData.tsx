@@ -1,48 +1,75 @@
-import { MoreHorizontal, Users, BookOpen } from "lucide-react";
+import { Users, BookOpen } from "lucide-react";
 
 interface ClassEntry {
   id: number;
   name: string;
   room: string;
-  teacher: string;
-  initials: string;
+  subject: string;
   students: number;
-  subjectsCount: number;
+  schedule: string;
   subjects: string[];
   color: string;
+  badgeColor: string;
 }
 
-const classData: ClassEntry[] = [
-  { id: 1, name: "Class 10A", room: "101", teacher: "Dr. Sarah Johnson", initials: "DSJ", students: 35, subjectsCount: 5, subjects: ["Mathematics", "Physics", "Chemistry", "English"], color: "border-blue-500" },
-  { id: 2, name: "Class 10B", room: "102", teacher: "Prof. Michael Chen", initials: "PMC", students: 32, subjectsCount: 5, subjects: ["Mathematics", "Physics", "Chemistry", "English"], color: "border-blue-500" },
-  { id: 3, name: "Class 9A", room: "103", teacher: "Ms. Emily Davis", initials: "MED", students: 38, subjectsCount: 5, subjects: ["Mathematics", "Physics", "Chemistry", "English"], color: "border-blue-500" },
-  { id: 4, name: "Class 9B", room: "104", teacher: "Mr. Robert Wilson", initials: "MRW", students: 36, subjectsCount: 5, subjects: ["Mathematics", "Physics", "Chemistry", "English"], color: "border-teal-400" },
-  { id: 5, name: "Class 8A", room: "105", teacher: "Dr. Lisa Anderson", initials: "DLA", students: 40, subjectsCount: 5, subjects: ["Mathematics", "Science", "English", "Social Studies"], color: "border-green-500" },
-  { id: 6, name: "Class 8B", room: "106", teacher: "Mrs. Patricia Brown", initials: "MPB", students: 38, subjectsCount: 5, subjects: ["Mathematics", "Science", "English", "Social Studies"], color: "border-green-500" },
+// Only the classes this teacher is assigned to teach
+const myClasses: ClassEntry[] = [
+  {
+    id: 1,
+    name: "Class 10A",
+    room: "101",
+    subject: "Mathematics",
+    students: 7,
+    schedule: "Mon, Wed, Fri — 8:50 AM",
+    subjects: ["Mathematics", "Applied Maths", "Statistics"],
+    color: "border-blue-500",
+    badgeColor: "bg-blue-50 text-blue-600",
+  },
+  {
+    id: 2,
+    name: "Class 10B",
+    room: "102",
+    subject: "Mathematics",
+    students: 5,
+    schedule: "Mon, Wed, Fri — 10:50 AM",
+    subjects: ["Mathematics", "Applied Maths"],
+    color: "border-indigo-500",
+    badgeColor: "bg-indigo-50 text-indigo-600",
+  },
+  {
+    id: 3,
+    name: "Class 9A",
+    room: "103",
+    subject: "Mathematics",
+    students: 9,
+    schedule: "Tue, Thu — 9:40 AM",
+    subjects: ["Mathematics", "Pre-Calculus"],
+    color: "border-emerald-500",
+    badgeColor: "bg-emerald-50 text-emerald-600",
+  },
 ];
 
 const TeacherClassData = () => {
   return (
     <div className="min-h-screen bg-slate-50 p-8 font-sans text-slate-700">
+      <div className="mb-6">
+        <p className="text-sm text-slate-500">You are assigned to teach <span className="font-bold text-slate-700">{myClasses.length} classes</span> this academic year.</p>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {classData.map((cls) => (
+        {myClasses.map((cls) => (
           <div key={cls.id} className={`bg-white rounded-2xl shadow-sm border-t-8 ${cls.color} p-6 hover:shadow-md transition-shadow`}>
             <div className="flex justify-between items-start mb-1">
               <h2 className="text-xl font-bold text-slate-800">{cls.name}</h2>
-              <button className="text-slate-400 hover:text-slate-600">
-                <MoreHorizontal className="w-5 h-5" />
-              </button>
+              <span className={`px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider ${cls.badgeColor}`}>
+                {cls.subject}
+              </span>
             </div>
             <p className="text-sm text-slate-400 mb-4">Room {cls.room}</p>
 
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 font-bold text-xs border border-blue-100">
-                {cls.initials}
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-slate-700 leading-tight">{cls.teacher}</p>
-                <p className="text-xs text-slate-400">Class Teacher</p>
-              </div>
+            <div className="bg-slate-50 rounded-xl px-4 py-3 mb-6">
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">My Schedule</p>
+              <p className="text-sm font-semibold text-slate-700">{cls.schedule}</p>
             </div>
 
             <div className="flex items-center gap-6 mb-6 text-slate-500">
@@ -52,21 +79,18 @@ const TeacherClassData = () => {
               </div>
               <div className="flex items-center gap-2">
                 <BookOpen className="w-4 h-4" />
-                <span className="text-sm">{cls.subjectsCount} subjects</span>
+                <span className="text-sm">{cls.subjects.length} topics</span>
               </div>
             </div>
 
             <div>
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Subjects</p>
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Topics Covered</p>
               <div className="flex flex-wrap gap-2">
                 {cls.subjects.map((sub, idx) => (
                   <span key={idx} className="px-3 py-1 bg-slate-50 border border-slate-100 rounded-full text-[11px] font-bold text-slate-700">
                     {sub}
                   </span>
                 ))}
-                <span className="px-3 py-1 bg-slate-50 border border-slate-100 rounded-full text-[11px] font-bold text-slate-700">
-                  +1
-                </span>
               </div>
             </div>
           </div>

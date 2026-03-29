@@ -1,5 +1,7 @@
-import { useState, useEffect } from "react";
-import { Search, Bell, Menu } from "lucide-react";
+import { useState, useEffect, useContext } from "react";
+import { Search, Bell, Menu, LogOut, Settings, UserCircle } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { AuthContext } from "../context/AuthContext";
 import {
   AreaChart,
   Area,
@@ -16,6 +18,8 @@ import StudentEventData from "../components/Student/features/StudentEventData";
 import StudentTimetableData from "../components/Student/features/StudentTimetableData";
 import StudentAnnouncementData from "../components/Student/features/StudentAnnouncementData";
 import Homework from "../components/Student/features/StudentHomework";
+import StudentResultData from "../components/Student/features/StudentResultData";
+import StudentProfileData from "../components/Student/features/StudentProfileData";
 
 import {
   sidebarItems,
@@ -32,22 +36,21 @@ interface Notification {
   unread: boolean;
 }
 
-interface HeaderActionsProps {
-  placeholder?: string;
-}
-
 const StudentDashboard = () => {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [activeItem, setActiveItem] = useState("Dashboard");
   const [dateInfo, setDateInfo] = useState({ day: "", fullDate: "" });
-
-  // Notification State
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
+
+  const auth = useContext(AuthContext);
+  const navigate = useNavigate();
+
   const [notifications] = useState<Notification[]>([
-    { id: 1, title: "New Admission", desc: "Siddharth added to Class 10A", time: "2 mins ago", unread: true },
-    { id: 2, title: "Fee Payment", desc: "Monthly fee received from Roll #22", time: "1 hour ago", unread: true },
-    { id: 3, title: "Exam Results", desc: "Board exams result are now available", time: "5 hours ago", unread: true },
+    { id: 1, title: "Exam Schedule", desc: "Unit Test 2 starts from Nov 10", time: "2 mins ago", unread: true },
+    { id: 2, title: "Homework Due", desc: "Math assignment due tomorrow", time: "1 hour ago", unread: true },
+    { id: 3, title: "Exam Results", desc: "Mid-term results are now available", time: "5 hours ago", unread: false },
   ]);
 
   useEffect(() => {
@@ -59,17 +62,23 @@ const StudentDashboard = () => {
     });
   }, []);
 
-  /* --- REUSABLE HEADER ACTIONS --- */
-  const HeaderActions = ({ placeholder = "Search..." }: HeaderActionsProps) => (
+  const handleLogout = () => {
+    auth?.logout();
+    navigate("/login");
+  };
+
+  const unreadCount = notifications.filter((n) => n.unread).length;
+
+  const HeaderActions = ({ placeholder = "Search..." }: { placeholder?: string }) => (
     <div className="flex flex-1 items-center justify-between">
       <div className="hidden md:block">
         <h1 className="text-xl font-bold text-slate-800">{activeItem}</h1>
         <p className="text-xs text-gray-500">
-          {activeItem === "Dashboard" ? "School overview and analytics" : `Manage ${activeItem.toLowerCase()}`}
+          {activeItem === "Dashboard" ? "Welcome back, Alex!" : `Your ${activeItem.toLowerCase()}`}
         </p>
       </div>
 
-      <div className="flex items-center gap-6 ml-auto">
+      <div className="flex items-center gap-4 ml-auto">
         <div className="relative hidden sm:block">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
@@ -79,30 +88,32 @@ const StudentDashboard = () => {
           />
         </div>
 
-        <div className="flex items-center gap-4 border-l pl-6 border-gray-100">
-          {/* Notification Bell + Dropdown */}
+        <div className="flex items-center gap-3 border-l pl-4 border-gray-100">
+          {/* Notification Bell */}
           <div className="relative">
             <button
-              onClick={() => setShowNotifications(!showNotifications)}
-              className={`relative p-2 rounded-xl transition-all ${showNotifications ? 'bg-blue-50 text-blue-600' : 'text-gray-500 hover:bg-gray-100'}`}
+              onClick={() => { setShowNotifications(!showNotifications); setShowProfile(false); }}
+              className={`relative p-2 rounded-xl transition-all ${showNotifications ? "bg-blue-50 text-blue-600" : "text-gray-500 hover:bg-gray-100"}`}
             >
               <Bell className="w-5 h-5" />
-              {notifications.some(n => n.unread) && (
-                <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full"></span>
+              {unreadCount > 0 && (
+                <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full" />
               )}
             </button>
-
             {showNotifications && (
               <>
                 <div className="fixed inset-0 z-10" onClick={() => setShowNotifications(false)} />
-                <div className="absolute right-0 mt-3 w-80 bg-white rounded-2xl shadow-2xl border border-slate-100 z-20 overflow-hidden animate-in fade-in zoom-in duration-200 origin-top-right">
-                  <div className="p-4 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
+                <div className="absolute right-0 mt-3 w-80 bg-white rounded-2xl shadow-2xl border border-slate-100 z-20 overflow-hidden">
+                  <div className="p-4 border-b border-slate-50 bg-slate-50/50 flex justify-between items-center">
                     <h3 className="font-bold text-slate-800 text-sm">Notifications</h3>
+                    {unreadCount > 0 && (
+                      <span className="text-xs bg-blue-100 text-blue-600 font-bold px-2 py-0.5 rounded-full">{unreadCount} new</span>
+                    )}
                   </div>
-                  <div className="max-h-300px overflow-y-auto">
+                  <div className="max-h-72 overflow-y-auto">
                     {notifications.map((n) => (
-                      <div key={n.id} className={`p-4 border-b border-slate-50 hover:bg-slate-50 cursor-pointer flex gap-3 transition-colors ${n.unread ? 'bg-blue-50/20' : ''}`}>
-                        <div className={`w-2 h-2 mt-1.5 rounded-full shrink-0 ${n.unread ? 'bg-blue-600' : 'bg-transparent'}`} />
+                      <div key={n.id} className={`p-4 border-b border-slate-50 hover:bg-slate-50 cursor-pointer flex gap-3 transition-colors ${n.unread ? "bg-blue-50/20" : ""}`}>
+                        <div className={`w-2 h-2 mt-1.5 rounded-full shrink-0 ${n.unread ? "bg-blue-600" : "bg-transparent"}`} />
                         <div className="flex-1">
                           <p className="text-sm font-bold text-slate-800 leading-tight">{n.title}</p>
                           <p className="text-xs text-slate-500 mt-1">{n.desc}</p>
@@ -116,31 +127,73 @@ const StudentDashboard = () => {
             )}
           </div>
 
-          <div className="flex flex-col items-end min-w-max">
+          {/* Date */}
+          <div className="hidden lg:flex flex-col items-end min-w-max">
             <p className="text-xs font-bold text-slate-700 leading-none">{dateInfo.day}</p>
             <p className="text-[10px] text-gray-400 mt-1 leading-none">{dateInfo.fullDate}</p>
+          </div>
+
+          {/* Profile Dropdown */}
+          <div className="relative">
+            <button
+              onClick={() => { setShowProfile(!showProfile); setShowNotifications(false); }}
+              className={`flex items-center gap-2 p-1.5 rounded-xl transition-all ${showProfile ? "bg-blue-50" : "hover:bg-gray-100"}`}
+            >
+              <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-black">AJ</div>
+              <div className="hidden lg:block text-left">
+                <p className="text-xs font-bold text-slate-700 leading-none">Alex Johnson</p>
+                <p className="text-[10px] text-gray-400 mt-0.5">Student</p>
+              </div>
+            </button>
+            {showProfile && (
+              <>
+                <div className="fixed inset-0 z-10" onClick={() => setShowProfile(false)} />
+                <div className="absolute right-0 mt-3 w-56 bg-white rounded-2xl shadow-2xl border border-slate-100 z-20 overflow-hidden">
+                  <div className="p-4 border-b border-slate-50 bg-slate-50/50">
+                    <p className="text-sm font-bold text-slate-800">Alex Johnson</p>
+                    <p className="text-xs text-slate-400 mt-0.5">{auth?.user?.email}</p>
+                    <span className="inline-block mt-2 px-2.5 py-0.5 bg-blue-100 text-blue-600 text-[10px] font-bold rounded-full uppercase tracking-wider">Student</span>
+                  </div>
+                  <div className="p-2">
+                    <button
+                      onClick={() => { setActiveItem("Profile"); setShowProfile(false); }}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-slate-600 hover:bg-slate-50 transition-colors"
+                    >
+                      <UserCircle className="w-4 h-4 text-slate-400" /> My Profile
+                    </button>
+                    <button
+                      onClick={() => setShowProfile(false)}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-slate-600 hover:bg-slate-50 transition-colors"
+                    >
+                      <Settings className="w-4 h-4 text-slate-400" /> Settings
+                    </button>
+                    <div className="border-t border-slate-100 mt-1 pt-1">
+                      <button
+                        onClick={handleLogout}
+                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-rose-500 hover:bg-rose-50 transition-colors"
+                      >
+                        <LogOut className="w-4 h-4" /> Logout
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>
     </div>
   );
 
-  const renderHeaderContent = () => {
-    switch (activeItem) {
-      case "Teachers": return <HeaderActions placeholder="Search teachers..." />;
-      case "Students": return <HeaderActions placeholder="Search students..." />;
-      case "Dashboard":
-      default: return <HeaderActions placeholder="Search everything..." />;
-    }
-  };
-
   const renderContent = () => {
     switch (activeItem) {
-      case "Timetable": return <StudentTimetableData/>;
-      case "Announcements": return <StudentAnnouncementData/>;
-      case "Events": return <StudentEventData/>;
-      case "Attendance": return <StudentAttendanceData/>;
-      case "Homework": return <Homework/>;
+      case "Timetable": return <StudentTimetableData />;
+      case "Announcements": return <StudentAnnouncementData />;
+      case "Events": return <StudentEventData />;
+      case "Attendance": return <StudentAttendanceData />;
+      case "Homework": return <Homework />;
+      case "Results": return <StudentResultData />;
+      case "Profile": return <StudentProfileData />;
       case "Dashboard":
       default:
         return (
@@ -161,18 +214,18 @@ const StudentDashboard = () => {
             </div>
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mt-6">
               <div className="xl:col-span-2 bg-white rounded-2xl border border-gray-200 p-6">
-                <h3 className="text-lg font-bold mb-6 text-slate-800">Weekly Attendance Overview</h3>
+                <h3 className="text-lg font-bold mb-6 text-slate-800">Weekly Attendance</h3>
                 <ResponsiveContainer width="100%" height={280}>
                   <AreaChart data={chartData}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                    <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} />
-                    <YAxis domain={[0, 100]} axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} />
-                    <Tooltip contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)'}} />
+                    <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fill: "#94a3b8", fontSize: 12 }} />
+                    <YAxis domain={[0, 100]} axisLine={false} tickLine={false} tick={{ fill: "#94a3b8", fontSize: 12 }} />
+                    <Tooltip contentStyle={{ borderRadius: "12px", border: "none", boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)" }} />
                     <Area type="monotone" dataKey="value" stroke="#3b82f6" strokeWidth={3} fill="url(#colorView)" />
                     <defs>
                       <linearGradient id="colorView" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
                       </linearGradient>
                     </defs>
                   </AreaChart>
@@ -204,11 +257,6 @@ const StudentDashboard = () => {
   return (
     <div className="flex h-screen bg-[#f8fafc] overflow-hidden">
       <StudentSidebar
-        collapsed={collapsed}
-        setCollapsed={setCollapsed}
-        sidebarItems={sidebarItems}
-        mobileOpen={mobileOpen}
-        setMobileOpen={setMobileOpen}
         activeItem={activeItem}
         setActiveItem={setActiveItem}
       />
@@ -217,10 +265,10 @@ const StudentDashboard = () => {
           <button className="lg:hidden text-gray-600 mr-4 p-2 hover:bg-slate-100 rounded-lg" onClick={() => setMobileOpen(true)}>
             <Menu size={22} />
           </button>
-          {renderHeaderContent()}
+          <HeaderActions placeholder="Search..." />
         </header>
         <main className="flex-1 overflow-y-auto p-8 bg-[#f8fafc]">
-          <div className="max-w-1400 mx-auto">{renderContent()}</div>
+          <div className="max-w-7xl mx-auto">{renderContent()}</div>
         </main>
       </div>
     </div>

@@ -1,4 +1,5 @@
-import { Search, ChevronDown, Plus, Calendar, Clock, MapPin, Users } from "lucide-react";
+import { useState } from "react";
+import { Search, ChevronDown, Calendar, Clock, MapPin, Users, X, Eye } from "lucide-react";
 
 interface Event {
   type: string;
@@ -22,68 +23,94 @@ const events: Event[] = [
 ];
 
 const TeacherEventData = () => {
+  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+
   return (
     <div className="p-8 bg-gray-50 min-h-screen font-sans text-slate-800">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-        <div className="flex items-center gap-3 w-full max-w-2xl">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search events..."
-              className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/10 text-sm"
-            />
-          </div>
-
-          <button className="flex items-center justify-between gap-2 min-w-[140px] px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-slate-600 hover:bg-gray-50 transition-colors">
-            All Types <ChevronDown size={16} className="text-gray-400" />
-          </button>
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input type="text" placeholder="Search events..." className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" />
         </div>
-
-        <button className="bg-[#2540D0] hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg flex items-center gap-2 text-sm font-semibold transition-all">
-          <Plus size={18} />
-          Add Event
-        </button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {events.map((event, idx) => (
           <div
             key={idx}
-            className={`bg-white rounded-xl shadow-sm border border-gray-100 border-l-[6px] ${event.colorClass} p-6 flex flex-col gap-3`}
+            onClick={() => setSelectedEvent(event)}
+            className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-md hover:cursor-pointer transition-all hover:border-blue-400"
           >
-            <div>
-              <span className={`inline-block px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider ${event.badgeClass}`}>
+            <div className="flex items-center justify-between mb-4">
+              <span className={`inline-block px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${event.badgeClass}`}>
                 {event.type}
               </span>
+              <Eye className="w-5 h-5 text-gray-400 hover:text-blue-500 transition-colors" />
             </div>
-
-            <h3 className="font-bold text-xl text-slate-800 tracking-tight">{event.title}</h3>
-            <p className="text-sm text-slate-500 leading-relaxed line-clamp-2">{event.description}</p>
-
-            <div className="space-y-2 mt-2">
-              <div className="flex items-center gap-3 text-slate-500">
-                <Calendar size={16} className="text-slate-400" />
-                <span className="text-sm font-medium">{event.date}</span>
+            <h3 className="text-base font-bold text-slate-900 mb-2">{event.title}</h3>
+            <p className="text-sm text-slate-500 line-clamp-2 mb-4">{event.description}</p>
+            <div className="flex items-center justify-between pt-4 border-t border-slate-50">
+              <div className="flex items-center gap-3 text-slate-400 text-sm">
+                <Calendar className="w-4 h-4" />
+                <span>{event.date}</span>
               </div>
-              <div className="flex items-center gap-3 text-slate-500">
-                <Clock size={16} className="text-slate-400" />
-                <span className="text-sm font-medium">{event.time}</span>
-              </div>
-              <div className="flex items-center gap-3 text-slate-500">
-                <MapPin size={16} className="text-slate-400" />
-                <span className="text-sm font-medium">{event.location}</span>
-              </div>
-              <div className="flex items-center gap-3 text-slate-500">
-                <Users size={16} className="text-slate-400" />
-                <span className="text-sm font-medium">{event.audience}</span>
+              <div className="flex items-center gap-1 text-slate-400">
+                <Users className="w-4 h-4" />
+                <span className="text-xs">{event.audience}</span>
               </div>
             </div>
           </div>
         ))}
       </div>
+
+      {selectedEvent && (
+        <>
+          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setSelectedEvent(null)} />
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl" onClick={e => e.stopPropagation()}>
+              <div className="sticky top-0 bg-white border-b border-slate-200 p-6">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-2xl font-bold text-slate-900">{selectedEvent.title}</h2>
+                  <button onClick={() => setSelectedEvent(null)} className="p-2 hover:bg-slate-100 rounded-xl transition-colors">
+                    <X className="w-6 h-6" />
+                  </button>
+                </div>
+                <span className={`inline-block mt-2 px-3 py-1 rounded-full text-sm font-bold uppercase tracking-wide ${selectedEvent.badgeClass}`}>
+                  {selectedEvent.type}
+                </span>
+              </div>
+              <div className="p-8 space-y-6">
+                <p className="text-lg text-slate-700 leading-relaxed">{selectedEvent.description}</p>
+                <div className="grid md:grid-cols-2 gap-6 pt-6 border-t border-slate-200">
+                  <div>
+                    <div className="flex items-center gap-3 mb-2">
+                      <Calendar className="w-5 h-5 text-blue-600" />
+                      <span className="font-bold text-slate-900">{selectedEvent.date}</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Clock className="w-5 h-5 text-blue-600" />
+                      <span className="font-semibold text-slate-700">{selectedEvent.time}</span>
+                    </div>
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-3 mb-2">
+                      <MapPin className="w-5 h-5 text-blue-600" />
+                      <span className="font-bold text-slate-900">{selectedEvent.location}</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Users className="w-5 h-5 text-blue-600" />
+                      <span className="font-semibold text-slate-700">{selectedEvent.audience}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 };
 
 export default TeacherEventData;
+

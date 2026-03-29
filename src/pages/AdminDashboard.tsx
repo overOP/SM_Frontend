@@ -1,5 +1,7 @@
-import { useState, useEffect } from "react";
-import { Search, Bell, Menu } from "lucide-react";
+import { useState, useEffect, useContext } from "react";
+import { Search, Bell, Menu, LogOut, Settings } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { AuthContext } from "../context/AuthContext";
 import {
   AreaChart,
   Area,
@@ -48,6 +50,10 @@ const AdminDashboard = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [activeItem, setActiveItem] = useState("Dashboard");
   const [dateInfo, setDateInfo] = useState({ day: "", fullDate: "" });
+  const [showProfile, setShowProfile] = useState(false);
+  const auth = useContext(AuthContext);
+  const navigate = useNavigate();
+  const handleLogout = () => { auth?.logout(); navigate("/login"); };
   const [searchFilters, setSearchFilters] = useState<Record<string, string>>(() => {
     const stored = localStorage.getItem("admin-search-filters");
     if (!stored) return {};
@@ -110,7 +116,7 @@ const AdminDashboard = () => {
           {/* Notification Bell + Dropdown */}
           <div className="relative">
             <button
-              onClick={() => setShowNotifications(!showNotifications)}
+              onClick={() => { setShowNotifications(!showNotifications); setShowProfile(false); }}
               className={`relative p-2 rounded-xl transition-all ${showNotifications ? 'bg-blue-50 text-blue-600' : 'text-gray-500 hover:bg-gray-100'}`}
             >
               <Bell className="w-5 h-5" />
@@ -143,9 +149,51 @@ const AdminDashboard = () => {
             )}
           </div>
 
-          <div className="flex flex-col items-end min-w-max">
+          <div className="hidden lg:flex flex-col items-end min-w-max">
             <p className="text-xs font-bold text-slate-700 leading-none">{dateInfo.day}</p>
             <p className="text-[10px] text-gray-400 mt-1 leading-none">{dateInfo.fullDate}</p>
+          </div>
+
+          {/* Profile Dropdown */}
+          <div className="relative">
+            <button
+              onClick={() => { setShowProfile(!showProfile); setShowNotifications(false); }}
+              className={`flex items-center gap-2 p-1.5 rounded-xl transition-all ${showProfile ? 'bg-blue-50' : 'hover:bg-gray-100'}`}
+            >
+              <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-black">AD</div>
+              <div className="hidden lg:block text-left">
+                <p className="text-xs font-bold text-slate-700 leading-none">Admin</p>
+                <p className="text-[10px] text-gray-400 mt-0.5">Administrator</p>
+              </div>
+            </button>
+            {showProfile && (
+              <>
+                <div className="fixed inset-0 z-10" onClick={() => setShowProfile(false)} />
+                <div className="absolute right-0 mt-3 w-56 bg-white rounded-2xl shadow-2xl border border-slate-100 z-20 overflow-hidden">
+                  <div className="p-4 border-b border-slate-50 bg-slate-50/50">
+                    <p className="text-sm font-bold text-slate-800">Admin</p>
+                    <p className="text-xs text-slate-400 mt-0.5">{auth?.user?.email}</p>
+                    <span className="inline-block mt-2 px-2.5 py-0.5 bg-blue-100 text-blue-600 text-[10px] font-bold rounded-full uppercase tracking-wider">Administrator</span>
+                  </div>
+                  <div className="p-2">
+                    <button
+                      onClick={() => { setActiveItem("Settings"); setShowProfile(false); }}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-slate-600 hover:bg-slate-50 transition-colors"
+                    >
+                      <Settings className="w-4 h-4 text-slate-400" /> Settings
+                    </button>
+                    <div className="border-t border-slate-100 mt-1 pt-1">
+                      <button
+                        onClick={handleLogout}
+                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-rose-500 hover:bg-rose-50 transition-colors"
+                      >
+                        <LogOut className="w-4 h-4" /> Logout
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>

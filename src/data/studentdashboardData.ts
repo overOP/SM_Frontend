@@ -1,7 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import {
   LayoutDashboard,
-  Users,
   GraduationCap,
   BookOpen,
   ClipboardCheck,
@@ -10,6 +9,8 @@ import {
   Megaphone,
   UserPlus,
   CheckCircle2,
+  BarChart3,
+  UserCircle,
 } from "lucide-react";
 
 interface SidebarItem {
@@ -45,15 +46,17 @@ export const sidebarItems: SidebarItem[] = [
   { icon: ClipboardCheck, label: "Attendance" },
   { icon: Clock, label: "Timetable" },
   { icon: BookOpen, label: "Homework" },
+  { icon: BarChart3, label: "Results" },
   { icon: CalendarDays, label: "Events" },
   { icon: Megaphone, label: "Announcements" },
+  { icon: UserCircle, label: "Profile" },
 ];
 
 export const statsCards: StatCard[] = [
-  { title: "Total Students", value: "1,234", sub: "Active enrollments", change: "+12%", changeLabel: "from last month", icon: GraduationCap, color: "bg-blue-100 text-blue-600" },
-  { title: "Total Teachers", value: "89", sub: "Across all departments", change: "+5%", changeLabel: "from last month", icon: Users, color: "bg-cyan-100 text-cyan-600" },
-  { title: "Active Classes", value: "45", sub: "12 sections", change: null, changeLabel: null, icon: BookOpen, color: "bg-orange-100 text-orange-600" },
-  { title: "Today's Attendance", value: "92%", sub: "1,135 students present", change: "+3%", changeLabel: "from last month", icon: CheckCircle2, color: "bg-emerald-100 text-emerald-600" },
+  { title: "Days Present", value: "89", sub: "Out of 96 school days", change: "+3%", changeLabel: "from last month", icon: CheckCircle2, color: "bg-emerald-100 text-emerald-600" },
+  { title: "Days Absent", value: "7", sub: "This academic year", change: null, changeLabel: null, icon: CalendarDays, color: "bg-rose-100 text-rose-500" },
+  { title: "Homework Pending", value: "3", sub: "Due this week", change: null, changeLabel: null, icon: BookOpen, color: "bg-orange-100 text-orange-500" },
+  { title: "Current GPA", value: "3.8", sub: "Out of 4.0", change: "+0.2", changeLabel: "from last term", icon: GraduationCap, color: "bg-blue-100 text-blue-600" },
 ];
 
 export const chartData: ChartDatum[] = [

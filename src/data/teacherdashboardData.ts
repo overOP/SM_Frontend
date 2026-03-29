@@ -46,7 +46,7 @@ interface Activity {
 
 export const sidebarItems: SidebarItem[] = [
   { icon: LayoutDashboard, label: "Dashboard" },
-  { icon: Users, label: "Teachers" },
+ 
   { icon: GraduationCap, label: "Students" },
   { icon: Building2, label: "Classes" },
   { icon: ReceiptText, label: "Fees" },
