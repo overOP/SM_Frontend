@@ -1,19 +1,10 @@
-import { useState, useEffect, useContext } from "react";
-import { Search, Bell, Menu, LogOut, Settings } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { AuthContext } from "../context/AuthContext";
+import { useState } from "react";
+import { Search, Menu, LogOut, Settings } from "lucide-react";
 import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
 
 import TeacherSidebar from "../components/Teacher/features/TeacherSidebar";
-
 import TeacherClassData from "../components/Teacher/features/TeacherClassData";
 import TeacherStudentData from "../components/Teacher/features/TeacherStudentData";
 import TeacherTimetableData from "../components/Teacher/features/TeacherTimetableData";
@@ -23,55 +14,26 @@ import TeacherFeesData from "../components/Teacher/features/TeacherFeesData";
 import TeacherAttendanceData from "../components/Teacher/features/TeacherAttendanceData";
 import TeacherEventData from "../components/Teacher/features/TeacherEventData";
 import TeacherAnnouncementData from "../components/Teacher/features/TeacherAnnouncementData";
-
-import {
-  sidebarItems,
-  statsCards,
-  chartData,
-  activities,
-} from "../data/teacherdashboardData.ts";
-
-interface Notification {
-  id: number;
-  title: string;
-  desc: string;
-  time: string;
-  unread: boolean;
-}
-
-interface HeaderActionsProps {
-  placeholder?: string;
-}
+import { NotificationDropdown } from "../components/shared/NotificationDropdown";
+import { useDashboard } from "../hooks/useDashboard";
+import type { Notification } from "../types";
+import { sidebarItems, statsCards, chartData, activities } from "../data/teacherdashboardData.ts";
 
 const TeacherDashboard = () => {
-  const [collapsed, setCollapsed] = useState(false);
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [activeItem, setActiveItem] = useState("Dashboard");
-  const [dateInfo, setDateInfo] = useState({ day: "", fullDate: "" });
-  const [showProfile, setShowProfile] = useState(false);
-  const auth = useContext(AuthContext);
-  const navigate = useNavigate();
-  const handleLogout = () => { auth?.logout(); navigate("/login"); };
+  const {
+    collapsed, setCollapsed, mobileOpen, setMobileOpen,
+    activeItem, setActiveItem, dateInfo,
+    showNotifications, setShowNotifications, showProfile, setShowProfile,
+    handleLogout, auth,
+  } = useDashboard();
 
-  // Notification State
-  const [showNotifications, setShowNotifications] = useState(false);
   const [notifications] = useState<Notification[]>([
     { id: 1, title: "New Admission", desc: "Siddharth added to Class 10A", time: "2 mins ago", unread: true },
     { id: 2, title: "Fee Payment", desc: "Monthly fee received from Roll #22", time: "1 hour ago", unread: true },
     { id: 3, title: "Exam Results", desc: "Board exams result are now available", time: "5 hours ago", unread: true },
   ]);
 
-  useEffect(() => {
-    const now = new Date();
-    const options: Intl.DateTimeFormatOptions = { month: "long", day: "numeric", year: "numeric" };
-    setDateInfo({
-      day: now.toLocaleDateString("en-US", { weekday: "long" }),
-      fullDate: now.toLocaleDateString("en-US", options),
-    });
-  }, []);
-
-  /* --- REUSABLE HEADER ACTIONS --- */
-  const HeaderActions = ({ placeholder = "Search..." }: HeaderActionsProps) => (
+  const HeaderActions = ({ placeholder = "Search..." }: { placeholder?: string }) => (
     <div className="flex flex-1 items-center justify-between">
       <div className="hidden md:block">
         <h1 className="text-xl font-bold text-slate-800">{activeItem}</h1>
@@ -91,48 +53,18 @@ const TeacherDashboard = () => {
         </div>
 
         <div className="flex items-center gap-4 border-l pl-6 border-gray-100">
-          {/* Notification Bell + Dropdown */}
-          <div className="relative">
-            <button
-              onClick={() => { setShowNotifications(!showNotifications); setShowProfile(false); }}
-              className={`relative p-2 rounded-xl transition-all ${showNotifications ? 'bg-blue-50 text-blue-600' : 'text-gray-500 hover:bg-gray-100'}`}
-            >
-              <Bell className="w-5 h-5" />
-              {notifications.some(n => n.unread) && (
-                <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full"></span>
-              )}
-            </button>
-
-            {showNotifications && (
-              <>
-                <div className="fixed inset-0 z-10" onClick={() => setShowNotifications(false)} />
-                <div className="absolute right-0 mt-3 w-80 bg-white rounded-2xl shadow-2xl border border-slate-100 z-20 overflow-hidden animate-in fade-in zoom-in duration-200 origin-top-right">
-                  <div className="p-4 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
-                    <h3 className="font-bold text-slate-800 text-sm">Notifications</h3>
-                  </div>
-                  <div className="max-h-300px overflow-y-auto">
-                    {notifications.map((n) => (
-                      <div key={n.id} className={`p-4 border-b border-slate-50 hover:bg-slate-50 cursor-pointer flex gap-3 transition-colors ${n.unread ? 'bg-blue-50/20' : ''}`}>
-                        <div className={`w-2 h-2 mt-1.5 rounded-full shrink-0 ${n.unread ? 'bg-blue-600' : 'bg-transparent'}`} />
-                        <div className="flex-1">
-                          <p className="text-sm font-bold text-slate-800 leading-tight">{n.title}</p>
-                          <p className="text-xs text-slate-500 mt-1">{n.desc}</p>
-                          <p className="text-[10px] text-slate-400 mt-2">{n.time}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
+          <NotificationDropdown
+            notifications={notifications}
+            show={showNotifications}
+            onToggle={() => { setShowNotifications(!showNotifications); setShowProfile(false); }}
+            onClose={() => setShowNotifications(false)}
+          />
 
           <div className="hidden lg:flex flex-col items-end min-w-max">
             <p className="text-xs font-bold text-slate-700 leading-none">{dateInfo.day}</p>
             <p className="text-[10px] text-gray-400 mt-1 leading-none">{dateInfo.fullDate}</p>
           </div>
 
-          {/* Profile Dropdown */}
           <div className="relative">
             <button
               onClick={() => { setShowProfile(!showProfile); setShowNotifications(false); }}
@@ -182,24 +114,21 @@ const TeacherDashboard = () => {
     switch (activeItem) {
       case "Teachers": return <HeaderActions placeholder="Search teachers..." />;
       case "Students": return <HeaderActions placeholder="Search students..." />;
-      case "Dashboard":
-      default: return <HeaderActions placeholder="Search everything..." />;
+      default:         return <HeaderActions placeholder="Search everything..." />;
     }
   };
 
   const renderContent = () => {
     switch (activeItem) {
-     
-      case "Students": return <TeacherStudentData />;
-      case "Classes": return <TeacherClassData />;
-      case "Fees": return <TeacherFeesData />;
-      case "Attendance": return <TeacherAttendanceData />;
-      case "Timetable": return <TeacherTimetableData />;
-      case "Events": return <TeacherEventData />;
+      case "Students":      return <TeacherStudentData />;
+      case "Classes":       return <TeacherClassData />;
+      case "Fees":          return <TeacherFeesData />;
+      case "Attendance":    return <TeacherAttendanceData />;
+      case "Timetable":     return <TeacherTimetableData />;
+      case "Events":        return <TeacherEventData />;
       case "Announcements": return <TeacherAnnouncementData />;
-      case "Reports": return <TeacherReportData />;
-      case "Settings": return <TeacherSettingsData />;
-      case "Dashboard":
+      case "Reports":       return <TeacherReportData />;
+      case "Settings":      return <TeacherSettingsData />;
       default:
         return (
           <>
@@ -223,14 +152,14 @@ const TeacherDashboard = () => {
                 <ResponsiveContainer width="100%" height={280}>
                   <AreaChart data={chartData}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                    <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} />
-                    <YAxis domain={[0, 100]} axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} />
-                    <Tooltip contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)'}} />
+                    <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12 }} />
+                    <YAxis domain={[0, 100]} axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12 }} />
+                    <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }} />
                     <Area type="monotone" dataKey="value" stroke="#3b82f6" strokeWidth={3} fill="url(#colorView)" />
                     <defs>
                       <linearGradient id="colorView" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
                       </linearGradient>
                     </defs>
                   </AreaChart>

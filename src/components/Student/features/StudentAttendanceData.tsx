@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { getInitials } from "../../../utils/format";
 
 type AttendanceStatus = "present" | "absent" | "late" | "holiday";
 
@@ -29,7 +30,6 @@ const StudentAttendanceData = () => {
   const totalDays = getDaysInMonth(currentYear, selectedMonth);
   const startOffset = getFirstDayOfMonth(currentYear, selectedMonth);
 
-  const getInitials = (name: string) => name.split(" ").map((n) => n[0]).join("").toUpperCase();
 
   const getAttendanceStatus = (day: number): AttendanceStatus => {
     const date = new Date(currentYear, selectedMonth, day);

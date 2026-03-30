@@ -165,7 +165,12 @@ import {
   Bell,
   User,
   BookOpen,
+  Building2,
+  LogOut,
 } from "lucide-react";
+import { useContext } from "react";
+import { AuthContext } from "../../../context/AuthContext";
+import { useNavigate } from "react-router";
 
 const StudentSidebar = ({
   activeItem,
@@ -174,6 +179,17 @@ const StudentSidebar = ({
   activeItem: string;
   setActiveItem: (t: string) => void;
 }) => {
+  const auth = useContext(AuthContext);
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    auth?.logout();
+    navigate("/login");
+  };
+
+  // Mock student name - in a real app, this would come from user profile data
+  const studentName = "Alex Johnson";
+
   const menuItems = [
     { id: "Dashboard", label: "Dashboard", icon: LayoutDashboard },
     { id: "Attendance", label: "Attendance", icon: CalendarCheck },
@@ -188,15 +204,15 @@ const StudentSidebar = ({
   return (
     <div className="w-64 bg-white border-r border-slate-200 h-screen sticky top-0 flex flex-col p-4">
       <div className="flex items-center gap-3 px-2 mb-10">
-        <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold">
-          S
+        <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white">
+          <Building2 className="w-5 h-5" />
         </div>
         <span className="font-black text-xl tracking-tight text-slate-800">
-          SchoolSync
+          Edumanage
         </span>
       </div>
 
-      <nav className="space-y-1">
+      <nav className="space-y-1 flex-1">
         {menuItems.map((item) => (
           <button
             key={item.id}
@@ -212,6 +228,27 @@ const StudentSidebar = ({
           </button>
         ))}
       </nav>
+
+      <div className="mt-auto pt-4 border-t border-slate-200">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center">
+            <span className="text-xs font-bold text-blue-600">
+              {studentName.split(' ').map(n => n[0]).join('')}
+            </span>
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-slate-800">{studentName}</p>
+            <p className="text-xs text-slate-500">Student</p>
+          </div>
+        </div>
+        <button
+          onClick={handleLogout}
+          className="w-full flex items-center gap-2 px-4 py-2 text-sm text-slate-500 hover:text-slate-800 hover:bg-slate-50 rounded-xl transition-all"
+        >
+          <LogOut size={16} />
+          <span>Logout</span>
+        </button>
+      </div>
     </div>
   );
 };

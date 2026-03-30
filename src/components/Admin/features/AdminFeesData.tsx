@@ -3,7 +3,7 @@
 
 import { useState } from "react";
 import { Search, Eye, Download, X, Printer, Calendar } from "lucide-react";
-import * as XLSX from 'xlsx';
+import { exportToExcel } from "../../../utils/excel";
 
 type FeeStatus = "Paid" | "Partial" | "Unpaid";
 
@@ -39,11 +39,8 @@ const AdminFeesData = () => {
   );
 
   // --- Excel Export Logic ---
-  const exportToExcel = () => {
-    const worksheet = XLSX.utils.json_to_sheet(filteredData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "FeeRecords");
-    XLSX.writeFile(workbook, `Fee_Report_${new Date().toLocaleDateString()}.xlsx`);
+  const handleExport = () => {
+    exportToExcel(filteredData, "FeeRecords", `Fee_Report_${new Date().toLocaleDateString()}.xlsx`);
   };
 
   // --- Print Receipt Logic ---
@@ -61,7 +58,7 @@ const AdminFeesData = () => {
           <p className="text-sm text-slate-500">Manage student fees and collection reports</p>
         </div>
         <button 
-          onClick={exportToExcel}
+          onClick={handleExport}
           className="bg-white border border-slate-200 px-4 py-2.5 rounded-xl text-sm font-bold text-slate-700 flex items-center gap-2 hover:bg-slate-50 transition-all shadow-sm"
         >
           <Download size={18} className="text-emerald-600" /> Export All to Excel
@@ -118,7 +115,7 @@ const AdminFeesData = () => {
                 <td className="p-4 text-sm text-emerald-600 font-bold">Rs.{student.paid}</td>
                 <td className="p-4 flex justify-center gap-2">
                   <button onClick={() => setSelectedStudent(student)} className="p-2 bg-blue-50 text-blue-600 rounded-lg"><Eye size={16}/></button>
-                  <button onClick={exportToExcel} className="p-2 bg-emerald-50 text-emerald-600 rounded-lg"><Download size={16}/></button>
+                  <button onClick={handleExport} className="p-2 bg-emerald-50 text-emerald-600 rounded-lg"><Download size={16}/></button>
                 </td>
               </tr>
             ))}

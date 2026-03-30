@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Mail, Phone, MapPin, Calendar, BookOpen, User, Edit2, Shield, X, Check } from "lucide-react";
-import { Button, Input, Select } from "../ui";
+import { Button, Input, Select } from "../../ui";
 
 interface StudentProfile {
   name: string;

@@ -1,4 +1,5 @@
 import { Search, Pin, Calendar, User } from "lucide-react";
+import { getInitials } from "../../../utils/format";
 
 interface PinnedAnnouncement {
   id: number;
@@ -29,8 +30,6 @@ const TeacherAnnouncementData = () => {
     { id: 5, title: "Tech Club Meeting", date: "Oct 18, 2026", author: "John Doe" },
   ];
 
-  const getInitials = (name: string) =>
-    name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 3);
 
   return (
     <div className="p-6 bg-slate-50 min-h-screen font-sans text-slate-900">

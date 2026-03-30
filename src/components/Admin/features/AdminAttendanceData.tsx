@@ -7,7 +7,7 @@ import {
   ChevronDown, ChevronLeft, ChevronRight,
   Download, Save, CheckCircle2, XCircle, Clock
 } from "lucide-react";
-import * as XLSX from 'xlsx'; // Import for Excel Export
+import { exportToExcel } from "../../../utils/excel";
 
 type AttendanceStatus = "Present" | "Absent" | "On Leave";
 
@@ -64,19 +64,36 @@ const classStudents: Record<string, Omit<Student, "status">[]> = {
   ],
 };
 
-function buildStudents(cls: string): Student[] {
-  return (classStudents[cls] ?? []).map((s) => ({ ...s, status: "Present" as AttendanceStatus }));
+/** Deterministic default status based on date + student id — gives realistic variation across days */
+function getDefaultStatus(date: string, studentId: number): AttendanceStatus {
+  const dateNum = parseInt(date.replace(/-/g, ""), 10);
+  const hash = (dateNum + studentId * 37) % 10;
+  if (hash === 0) return "Absent";
+  if (hash === 1) return "On Leave";
+  return "Present";
+}
+
+type AttendanceStore = Record<string, Record<number, AttendanceStatus>>;
+
+function buildStudentsForDate(cls: string, date: string, store: AttendanceStore): Student[] {
+  const saved = store[`${cls}_${date}`];
+  return (classStudents[cls] ?? []).map((s) => ({
+    ...s,
+    status: saved?.[s.id] ?? getDefaultStatus(date, s.id),
+  }));
 }
 
 const AdminAttendanceData = () => {
   const [selectedClass, setSelectedClass] = useState("Class 10A");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
+  const [attendanceStore, setAttendanceStore] = useState<AttendanceStore>({});
 
   const classes = ["Class 10A", "Class 10B", "Class 9A", "Class 9B", "Class 8A"];
 
-  const [students, setStudents] = useState<Student[]>(() => buildStudents("Class 10A"));
+  // students is fully derived — no separate state needed
+  const students = buildStudentsForDate(selectedClass, selectedDate, attendanceStore);
 
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0]);
   const formattedDate = new Date(selectedDate).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" });
 
   // --- Dynamic Stats Calculations ---
@@ -87,7 +104,11 @@ const AdminAttendanceData = () => {
   const attendanceRate = totalStudents > 0 ? Math.round((presentCount / totalStudents) * 100) : 0;
 
   const updateStatus = (id: number, status: AttendanceStatus) => {
-    setStudents((prev) => prev.map((s) => s.id === id ? { ...s, status } : s));
+    const key = `${selectedClass}_${selectedDate}`;
+    setAttendanceStore(prev => ({
+      ...prev,
+      [key]: { ...prev[key], [id]: status },
+    }));
   };
 
   // --- 1. EXCEL EXPORT FUNCTION ---
@@ -101,10 +122,7 @@ const AdminAttendanceData = () => {
       "Date": selectedDate
     }));
 
-    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Attendance");
-    XLSX.writeFile(workbook, `Attendance_${selectedClass}_${selectedDate}.xlsx`);
+    exportToExcel(dataToExport, "Attendance", `Attendance_${selectedClass}_${selectedDate}.xlsx`);
   };
 
   // --- 2. SAVE FUNCTION ---
@@ -136,7 +154,7 @@ const AdminAttendanceData = () => {
                 {classes.map((cls) => (
                   <div
                     key={cls}
-                    onClick={() => { setSelectedClass(cls); setStudents(buildStudents(cls)); setIsDropdownOpen(false); }}
+                    onClick={() => { setSelectedClass(cls); setIsDropdownOpen(false); }}
                     className={`px-4 py-2.5 text-sm cursor-pointer transition-colors hover:bg-slate-50 ${cls === selectedClass ? "bg-blue-50 text-blue-600 font-bold" : "text-slate-600"}`}
                   >
                     {cls}

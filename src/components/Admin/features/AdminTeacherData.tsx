@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Search, MoreHorizontal, Plus, Mail, Phone, BookOpen, X, Edit2, Trash2, Eye, GraduationCap } from "lucide-react";
+import { getInitials } from "../../../utils/format";
 
 type TeacherStatus = "Active" | "On Leave";
 
@@ -70,7 +71,7 @@ const AdminTeacherData = () => {
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
-    const initials = formData.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 3);
+    const initials = getInitials(formData.name, 3);
     const classesArray = formData.classes ? formData.classes.split(",").map((c) => c.trim()).filter(Boolean) : [];
 
     if (modalMode === "edit" && selectedTeacher) {
