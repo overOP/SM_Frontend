@@ -12,6 +12,7 @@ import TeacherReportData from "../components/Teacher/features/TeacherReportData"
 import TeacherSettingsData from "../components/Teacher/features/TeacherSettingsData";
 import TeacherFeesData from "../components/Teacher/features/TeacherFeesData";
 import TeacherAttendanceData from "../components/Teacher/features/TeacherAttendanceData";
+import TeacherExamData from "../components/Teacher/features/TeacherExamData.tsx";
 import TeacherEventData from "../components/Teacher/features/TeacherEventData";
 import TeacherAnnouncementData from "../components/Teacher/features/TeacherAnnouncementData";
 import { NotificationDropdown } from "../components/shared/NotificationDropdown";
@@ -123,6 +124,7 @@ const TeacherDashboard = () => {
       case "Students":      return <TeacherStudentData />;
       case "Classes":       return <TeacherClassData />;
       case "Fees":          return <TeacherFeesData />;
+      case "Exams":         return <TeacherExamData />;
       case "Attendance":    return <TeacherAttendanceData />;
       case "Timetable":     return <TeacherTimetableData />;
       case "Events":        return <TeacherEventData />;

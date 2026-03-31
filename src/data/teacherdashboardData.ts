@@ -14,6 +14,7 @@ import {
   CheckCircle2,
   ReceiptText,
   Building2,
+  Paperclip,
 } from "lucide-react";
 
 interface SidebarItem {
@@ -51,6 +52,8 @@ export const sidebarItems: SidebarItem[] = [
   { icon: Building2, label: "Classes" },
   { icon: ReceiptText, label: "Fees" },
   { icon: ClipboardCheck, label: "Attendance" },
+  {icon:Paperclip,label:"Exams"},
+  
   { icon: Clock, label: "Timetable" },
   { icon: CalendarDays, label: "Events" },
   { icon: Megaphone, label: "Announcements" },

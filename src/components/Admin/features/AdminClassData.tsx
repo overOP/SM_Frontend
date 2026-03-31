@@ -1,7 +1,7 @@
 import { Plus } from "lucide-react";
-import ClassCard from "./ClassCard";
-import ClassFormModal from "./ClassFormModal";
-import { useClassManagement } from "./useClassManagement";
+import ClassCard from "../Cards/ClassCard";
+import ClassFormModal from "../Cards/ClassFormModal";
+import { useClassManagement } from "../utils/useClassManagement";
 
 const AdminClassData = () => {
   const {

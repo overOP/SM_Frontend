@@ -12,6 +12,7 @@ import AdminFeesData from "../components/Admin/features/AdminFeesData";
 import AdminAttendanceData from "../components/Admin/features/AdminAttendanceData";
 import AdminEventData from "../components/Admin/features/AdminEventData";
 import AdminAnnouncementData from "../components/Admin/features/AdminAnnouncementData";
+import AdminExamData from "../components/Admin/features/AdminExamData.tsx";
 import AdminReportData from "../components/Admin/features/AdminReportData";
 import AdminSettingsData from "../components/Admin/features/AdminSettingsData";
 import AdminTimetableData from "../components/Admin/features/AdminTimetableData";
@@ -139,6 +140,7 @@ const AdminDashboard = () => {
       case "Fees":          return <AdminFeesData />;
       case "Attendance":    return <AdminAttendanceData />;
       case "Timetable":     return <AdminTimetableData />;
+      case "Exams":         return <AdminExamData />;
       case "Events":        return <AdminEventData />;
       case "Announcements": return <AdminAnnouncementData />;
       case "Results":       return <AdminResultData />;

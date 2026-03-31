@@ -1,9 +1,9 @@
 import { Plus, GraduationCap } from "lucide-react";
-import StudentCard from "./StudentCard";
-import StudentFilters from "./StudentFilters";
-import StudentViewModal from "./StudentViewModal";
-import StudentFormModal from "./StudentFormModal";
-import { useStudentManagement } from "./useStudentManagement";
+import StudentCard from "../Cards/StudentCard";
+import StudentFilters from "../utils/StudentFilters";
+import StudentViewModal from "../Modals/StudentViewModal";
+import StudentFormModal from "../Modals/StudentFormModal";
+import { useStudentManagement } from "../utils/useStudentManagement";
 
 const AdminStudentData = () => {
   const {
@@ -65,7 +65,7 @@ const AdminStudentData = () => {
                 <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Guardian</th>
                 <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Attendance</th>
                 <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-4"></th>
+                <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">

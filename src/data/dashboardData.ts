@@ -15,6 +15,7 @@ import {
   ReceiptText,
   Building2,
   ChartBar,
+  Paperclip,
 } from "lucide-react";
 
 interface SidebarItem {
@@ -51,6 +52,7 @@ export const sidebarItems: SidebarItem[] = [
   { icon: GraduationCap, label: "Students" },
   { icon: Building2, label: "Classes" },
   { icon: ReceiptText, label: "Fees" },
+  {icon:Paperclip,label:"Exams"},
   { icon: ClipboardCheck, label: "Attendance" },
   { icon: Clock, label: "Timetable" },
   { icon: ChartBar, label: "Results" },
