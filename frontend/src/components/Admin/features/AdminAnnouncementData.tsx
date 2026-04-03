@@ -1,16 +1,6 @@
-import { useMemo, useState, type FormEvent } from "react";
+import { useMemo, useState } from "react";
 import { Search, Plus, Pin, Calendar, User, X } from "lucide-react";
-
-interface Announcement {
-  id: number;
-  priority: "High" | "Medium" | "Low";
-  audience: string;
-  title: string;
-  author: string;
-  content: string;
-  date: string;
-  pinned: boolean;
-}
+import { useAnnouncements, type Announcement } from "../../../context/AnnouncementContext";
 
 interface AnnouncementForm {
   title: string;
@@ -22,73 +12,18 @@ interface AnnouncementForm {
   pinned: boolean;
 }
 
-const initialAnnouncements: Announcement[] = [
-  {
-    id: 1,
-    priority: "High",
-    audience: "Everyone",
-    title: "Annual Sports Day 2026",
-    author: "Dr. Sarah Johnson",
-    content:
-      "The annual sports meet is scheduled for next month. Please ensure all student registrations are completed.",
-    date: "Oct 24, 2026",
-    pinned: true,
-  },
-  {
-    id: 2,
-    priority: "High",
-    audience: "Students",
-    title: "Mid-Term Examination Schedule",
-    author: "Academic Office",
-    content:
-      "The detailed schedule for the upcoming mid-term examinations has been uploaded.",
-    date: "Oct 22, 2026",
-    pinned: true,
-  },
-  {
-    id: 3,
-    priority: "Medium",
-    audience: "Students",
-    title: "Library New Arrivals",
-    author: "Librarian",
-    content: "New reference books and fiction titles are now available in the main library.",
-    date: "Oct 20, 2026",
-    pinned: false,
-  },
-  {
-    id: 4,
-    priority: "Medium",
-    audience: "Students",
-    title: "Canteen Menu Update",
-    author: "Admin Staff",
-    content: "The weekly menu has been updated with healthier and seasonal options.",
-    date: "Oct 19, 2026",
-    pinned: false,
-  },
-  {
-    id: 5,
-    priority: "Medium",
-    audience: "Students",
-    title: "Tech Club Meeting",
-    author: "John Doe",
-    content: "Tech Club members will meet in Lab 2 for upcoming hackathon planning.",
-    date: "Oct 18, 2026",
-    pinned: false,
-  },
-];
-
 const defaultForm: AnnouncementForm = {
   title: "",
   author: "",
   content: "",
-  audience: "Students",
+  audience: "Everyone",
   priority: "Medium",
   date: "",
   pinned: false,
 };
 
 const AdminAnnouncementData = () => {
-  const [announcements, setAnnouncements] = useState<Announcement[]>(initialAnnouncements);
+  const { announcements, setAnnouncements } = useAnnouncements();
   const [searchQuery, setSearchQuery] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState<AnnouncementForm>(defaultForm);
@@ -133,7 +68,7 @@ const AdminAnnouncementData = () => {
   const pinnedAnnouncements = filteredAnnouncements.filter((item) => item.pinned);
   const recentAnnouncements = filteredAnnouncements.filter((item) => !item.pinned);
 
-  const handleSave = (e: FormEvent<HTMLFormElement>) => {
+  const handleSave = (e: { preventDefault: () => void }) => {
     e.preventDefault();
 
     const newAnnouncement: Announcement = {
@@ -141,7 +76,7 @@ const AdminAnnouncementData = () => {
       title: formData.title.trim(),
       author: formData.author.trim(),
       content: formData.content.trim(),
-      audience: formData.audience.trim(),
+      audience: formData.audience,
       priority: formData.priority,
       date: formatDate(formData.date),
       pinned: formData.pinned,
@@ -290,13 +225,16 @@ const AdminAnnouncementData = () => {
                   placeholder="Author"
                   className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                 />
-                <input
-                  required
+                <select
                   value={formData.audience}
                   onChange={(e) => setFormData((prev) => ({ ...prev, audience: e.target.value }))}
-                  placeholder="Audience (e.g. Students)"
                   className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                />
+                >
+                  <option value="Everyone">Everyone</option>
+                  <option value="Students">Students</option>
+                  <option value="Teachers">Teachers</option>
+                  <option value="Parents">Parents</option>
+                </select>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <select
