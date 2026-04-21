@@ -1,7 +1,14 @@
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import { BookOpen, Clock, Coffee, User } from "lucide-react";
+import { Card, StatusBadge } from "../ui";
+import { ParentEmptyState, ParentTableSkeleton } from "./shared/ParentModuleStates";
+
 interface TimeSlot {
   time: string;
   subject: string;
   teacher: string;
+  type?: "lecture" | "break" | "activity";
 }
 
 interface DaySchedule {
@@ -9,101 +16,122 @@ interface DaySchedule {
   slots: TimeSlot[];
 }
 
-const Timetable = () => {
-  const scheduleData: DaySchedule[] = [
-    {
-      day: "Monday",
-      slots: [
-        { time: "8:00 – 8:45", subject: "Mathematics", teacher: "Mrs. Kapoor" },
-        { time: "8:45 – 9:30", subject: "Science", teacher: "Mr. Verma" },
-        { time: "9:45 – 10:30", subject: "English", teacher: "Ms. Bhatia" },
-        { time: "10:30 – 11:15", subject: "Hindi", teacher: "Mrs. Reddy" },
-        { time: "11:30 – 12:15", subject: "Social Studies", teacher: "Mr. Joshi" },
-        { time: "12:15 – 1:00", subject: "Computer Science", teacher: "Ms. Nair" },
-      ],
-    },
-    {
-      day: "Tuesday",
-      slots: [
-        { time: "8:00 – 8:45", subject: "Physics", teacher: "Dr. Sharma" },
-        { time: "8:45 – 9:30", subject: "Physical Education", teacher: "Mr. Kumar" },
-        { time: "9:45 – 10:30", subject: "Mathematics", teacher: "Ms. Bhatia" },
-        { time: "10:30 – 11:15", subject: "Hindi", teacher: "Mrs. Reddy" },
-        { time: "11:30 – 12:15", subject: "Geography", teacher: "Mr. Singh" },
-        { time: "12:15 – 1:00", subject: "Computer Science", teacher: "Ms. Nair" },
-      ],
-    },
-    {
-      day: "Wednesday",
-      slots: [
-        { time: "8:00 – 8:45", subject: "Chemistry", teacher: "Mrs. Dutta" },
-        { time: "8:45 – 9:30", subject: "Biology", teacher: "Dr. Mehta" },
-        { time: "9:45 – 10:30", subject: "Mathematics", teacher: "Mr. Rao" },
-        { time: "10:30 – 11:15", subject: "English", teacher: "Ms. Fernandes" },
-        { time: "11:30 – 12:15", subject: "History", teacher: "Mr. Khan" },
-        { time: "12:15 – 1:00", subject: "Computer Science", teacher: "Mr. Iyer" },
-      ],
-    },
-    {
-      day: "Thursday",
-      slots: [
-        { time: "8:00 – 8:45", subject: "Physics", teacher: "Dr. Sharma" },
-        { time: "8:45 – 9:30", subject: "Art", teacher: "Ms. Gupta" },
-        { time: "9:45 – 10:30", subject: "Mathematics", teacher: "Mrs. Kapoor" },
-        { time: "10:30 – 11:15", subject: "Hindi", teacher: "Mrs. Reddy" },
-        { time: "11:30 – 12:15", subject: "Civics", teacher: "Mr. Joshi" },
-        { time: "12:15 – 1:00", subject: "Computer Science", teacher: "Ms. Nair" },
-      ],
-    },
-    {
-      day: "Friday",
-      slots: [
-        { time: "8:00 – 8:45", subject: "Biology", teacher: "Dr. Mehta" },
-        { time: "8:45 – 9:30", subject: "Chemistry", teacher: "Mrs. Dutta" },
-        { time: "9:45 – 10:30", subject: "English", teacher: "Ms. Fernandes" },
-        { time: "10:30 – 11:15", subject: "Mathematics", teacher: "Mr. Rao" },
-        { time: "11:30 – 12:15", subject: "Geography", teacher: "Mr. Singh" },
-        { time: "12:15 – 1:00", subject: "Computer Science", teacher: "Mr. Iyer" },
-      ],
-    },
-    {
-      day: "Sunday",
-      slots: [
-        { time: "8:00 – 8:45", subject: "Yoga", teacher: "Mr. Anand" },
-        { time: "8:45 – 9:30", subject: "Meditation", teacher: "Ms. Kaur" },
-        { time: "9:45 – 10:30", subject: "Creative Writing", teacher: "Ms. Thomas" },
-        { time: "10:30 – 11:15", subject: "Public Speaking", teacher: "Mr. Bose" },
-        { time: "11:30 – 12:15", subject: "Life Skills", teacher: "Mrs. Sharma" },
-        { time: "12:15 – 1:00", subject: "Club Activities", teacher: "Mr. Das" },
-      ],
-    },
-  ];
+const SCHEDULE_DATA: DaySchedule[] = [
+  {
+    day: "Monday",
+    slots: [
+      { time: "08:00 - 08:45", subject: "Mathematics", teacher: "Mrs. Kapoor", type: "lecture" },
+      { time: "08:45 - 09:30", subject: "Science", teacher: "Mr. Verma", type: "lecture" },
+      { time: "09:30 - 09:45", subject: "Short Break", teacher: "Campus", type: "break" },
+      { time: "09:45 - 10:30", subject: "English", teacher: "Ms. Bhatia", type: "lecture" },
+      { time: "10:30 - 11:15", subject: "Hindi", teacher: "Mrs. Reddy", type: "lecture" },
+    ],
+  },
+  {
+    day: "Tuesday",
+    slots: [
+      { time: "08:00 - 08:45", subject: "Physics", teacher: "Dr. Sharma", type: "lecture" },
+      { time: "08:45 - 09:30", subject: "P.E.", teacher: "Mr. Kumar", type: "activity" },
+      { time: "09:45 - 10:30", subject: "Mathematics", teacher: "Ms. Bhatia", type: "lecture" },
+    ],
+  },
+  { day: "Wednesday", slots: [{ time: "08:00 - 08:45", subject: "Chemistry", teacher: "Mrs. Dutta" }] },
+  { day: "Thursday", slots: [{ time: "08:00 - 08:45", subject: "Physics", teacher: "Dr. Sharma" }] },
+  { day: "Friday", slots: [{ time: "08:00 - 08:45", subject: "Biology", teacher: "Dr. Mehta" }] },
+  { day: "Saturday", slots: [] },
+  { day: "Sunday", slots: [{ time: "08:00 - 08:45", subject: "Yoga", teacher: "Mr. Anand" }] },
+];
+
+export default function Timetable() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialDay = searchParams.get("day") ?? "Monday";
+  const [activeDay, setActiveDay] = useState(initialDay);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    setSearchParams({ day: activeDay }, { replace: true });
+  }, [activeDay, setSearchParams]);
+
+  useEffect(() => {
+    setIsLoading(true);
+    const timer = setTimeout(() => setIsLoading(false), 320);
+    return () => clearTimeout(timer);
+  }, [activeDay]);
+
+  const currentSchedule = useMemo(
+    () => SCHEDULE_DATA.find((d) => d.day === activeDay),
+    [activeDay]
+  );
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500 max-w-6xl mx-auto pb-10">
-      {scheduleData.map((daySchedule, index) => (
-        <div key={index} className="bg-white rounded-[1.5rem] border border-slate-100 p-8 shadow-sm">
-          <h3 className="text-xl font-black text-slate-800 mb-6">{daySchedule.day}</h3>
-          <div className="space-y-3">
-            {daySchedule.slots.map((slot, i) => (
-              <div
-                key={i}
-                className="flex items-center justify-between p-4 rounded-xl border border-slate-50 hover:border-slate-200 hover:bg-slate-50/50 transition-all group"
-              >
-                <div className="w-32 text-slate-400 font-medium text-sm">{slot.time}</div>
-                <div className="flex-1 flex justify-center">
-                  <span className="bg-slate-100 text-slate-700 font-black text-xs px-4 py-1.5 rounded-full border border-slate-200 group-hover:bg-white transition-colors">
-                    {slot.subject}
-                  </span>
-                </div>
-                <div className="w-32 text-right text-slate-400 font-medium text-sm">{slot.teacher}</div>
-              </div>
-            ))}
-          </div>
+    <div className="space-y-6">
+      <Card className="border-slate-200 bg-white">
+        <div>
+          <p className="text-[11px] font-black uppercase tracking-[0.18em] text-blue-600">Timetable</p>
+          <h2 className="mt-1 text-xl font-black text-slate-900">Class schedule</h2>
+          <p className="mt-1 text-sm text-slate-500">Weekly schedule for Academic Year 2025-26.</p>
         </div>
-      ))}
+      </Card>
+
+      <div className="flex items-center gap-2 rounded-2xl bg-slate-100 p-1.5 w-full overflow-x-auto no-scrollbar">
+        {SCHEDULE_DATA.map((daySchedule) => (
+          <button
+            key={daySchedule.day}
+            type="button"
+            onClick={() => setActiveDay(daySchedule.day)}
+            className={`whitespace-nowrap rounded-xl px-6 py-2.5 text-sm font-black transition-all ${
+              activeDay === daySchedule.day ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-800"
+            }`}
+          >
+            {daySchedule.day}
+          </button>
+        ))}
+      </div>
+
+      {isLoading ? (
+        <ParentTableSkeleton rows={4} />
+      ) : (
+        <div className="space-y-3">
+          {currentSchedule?.slots.length ? (
+            currentSchedule.slots.map((slot, i) => (
+              <Card key={`${slot.subject}-${i}`} className="border-slate-200">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-[180px_1fr_auto] md:items-center">
+                  <div className="rounded-xl bg-slate-50 px-3 py-2">
+                    <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Time</p>
+                    <p className="text-sm font-black text-slate-800">{slot.time}</p>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <div className={`rounded-xl p-2 ${slot.type === "break" ? "bg-amber-50 text-amber-600" : "bg-blue-50 text-blue-600"}`}>
+                      {slot.type === "break" ? <Coffee size={18} /> : <BookOpen size={18} />}
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-slate-900">{slot.subject}</p>
+                      <p className="flex items-center gap-1 text-xs text-slate-500">
+                        <User size={12} />
+                        {slot.teacher}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="justify-self-start md:justify-self-end">
+                    <StatusBadge status={slot.type ?? "lecture"} variant={slot.type === "break" ? "warning" : "info"} />
+                  </div>
+                </div>
+              </Card>
+            ))
+          ) : (
+            <ParentEmptyState title="No classes scheduled" description={`No sessions are planned for ${activeDay}.`} />
+          )}
+        </div>
+      )}
+
+      <Card className="border-slate-200 bg-slate-50">
+        <p className="flex items-center gap-2 text-xs text-slate-500">
+          <Clock size={12} />
+          Class schedule syncs by day using URL state and updates automatically.
+        </p>
+      </Card>
     </div>
   );
-};
-
-export default Timetable;
+}

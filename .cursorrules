@@ -1,0 +1,34 @@
+# Frontend Production Standards: Multi-Portal CRM
+
+## 1. Modular "Feature" Architecture
+
+- **Rule:** Do not put all components in a global `/components` folder.
+- **Structure:** Use a `/features` directory. Each feature (e.g., `students`, `attendance`, `finance`) must be self-contained:
+  - `features/[feature]/components/`: Feature-specific UI (e.g., `StudentTable.tsx`).
+  - `features/[feature]/hooks/`: Feature-specific logic (e.g., `useStudentFilters.ts`).
+  - `features/[feature]/services/`: API calls or Server Action wrappers.
+- **Shared Assets:** Only generic primitives (Buttons, Inputs, Modals) go in `@/components/ui`.
+
+## 2. State & Data Fetching Optimization
+
+- **Rule:** Use "URL-as-State" for all dashboard filters.
+- **Implementation:** Sync search terms, pagination, and dropdown filters with URL query parameters (`?class=10&page=2`). This allows for deep-linking and browser "Back" button support.
+- **Rule:** Avoid global state (Redux/Zustand) for data that can be handled by Server Components or TanStack Query. Only use global state for UI-wide settings (e.g., Sidebar toggle, Theme).
+
+## 3. High-Density UI Standards
+
+- **Rule:** Prioritize "Substance over Style."
+- **Formatting:** Use compact padding (`py-1.5` or `py-2` for tables).
+- **Layout:** Use a "Master-Detail" pattern for Admin views-a list on the left/center and action panels that don't take the user away from the current context.
+- **Loading:** Always implement `Skeleton` loaders that match the layout of the final data to prevent "Layout Shift" (CLS).
+
+## 4. Multi-Portal Safety (Frontend Guardrails)
+
+- **Role-Based Rendering:** Create a `<RoleGuard role="ADMIN">` wrapper. Components that perform sensitive actions (like "Delete" or "Import") must be wrapped in this to prevent UI leakage to lower-privileged roles.
+- **Dynamic Imports:** Use `next/dynamic` for heavy client-side libraries (e.g., `PapaParse` for CSV, `Recharts` for analytics) so they don't bloat the initial load for mobile users.
+
+## 5. Form & Validation Standards
+
+- **Rule:** Use `react-hook-form` with `zod` for all inputs.
+- **Validation:** Implement "Immediate Feedback." Do not wait for a server response to tell the user a field is required.
+- **Bulk Operations:** CSV uploads must include a "Preview State" where users can review parsed data before the final "Submit" click.

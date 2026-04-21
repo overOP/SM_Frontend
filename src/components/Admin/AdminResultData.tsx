@@ -1,248 +1,765 @@
-import { useState, useEffect, useRef } from "react";
-import { FaPlus, FaEye, FaEdit, FaTrash, FaEllipsisH, FaTimes } from "react-icons/fa";
+import React, { useCallback, useContext, useMemo, useRef, useState } from "react";
+import {
+  Search,
+  Plus,
+  Eye,
+  Edit2,
+  Trash2,
+  User,
+  Hash,
+  Award,
+  Upload,
+  Download,
+  AlertCircle,
+} from "lucide-react";
 
-type ResultStatus = "Pass" | "Fail";
+import {
+  Button,
+  Input,
+  Select,
+  Card,
+  StatusBadge,
+  DataTable,
+  type Column,
+} from "../ui";
+import { Modal } from "../ui/Modal";
+import { AuthContext } from "../../context/AuthContext";
+import { adminDirectoryStudents, createInitialAdminResults } from "../../data/adminResultsSeed";
+import { demoSemesters, demoSubjects } from "../../data/studentResultsData";
+import {
+  finalizeAcademicResult,
+  parseResultsCsv,
+  RESULTS_CSV_TEMPLATE,
+} from "../../lib/adminCsvResults";
+import { canAdminManageResults } from "../../lib/resultsPermissions";
+import { rowMaxTotal, rowPercentage } from "../../lib/gpa";
+import type { AcademicResultDTO, ResultPublishStatus } from "../../types/results";
 
-interface Result {
-  id: number;
-  name: string;
-  class: string;
-  roll: string;
-  subject: string;
-  marks: number;
-  grade: string;
-  status: ResultStatus;
+function gradeClass(pct: number, letter: string): string {
+  if (letter === "F" || pct < 40) return "bg-rose-50 border-rose-100 text-rose-700";
+  if (pct >= 90 || letter === "A+") return "bg-amber-50 border-amber-200 text-amber-900 ring-1 ring-amber-200/60";
+  if (pct >= 80) return "bg-emerald-50 border-emerald-100 text-emerald-800";
+  return "bg-slate-50 border-slate-100 text-slate-700";
 }
 
-interface ResultFormData {
-  name: string;
-  class: string;
-  roll: string;
-  subject: string;
-  marks: string;
+function clamp(n: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, n));
 }
+
+const STATUS_OPTIONS = ["Draft", "Published", "UnderReview"] as const;
 
 const AdminResultData = () => {
-  const [results, setResults] = useState<Result[]>([
-    { id: 1, name: "Ishan Awasthi", class: "12-B", roll: "205", subject: "Computer Science", marks: 92, grade: "A+", status: "Pass" },
-    { id: 2, name: "Sandip Bhatta", class: "12-A", roll: "102", subject: "Mathematics", marks: 88, grade: "A", status: "Pass" },
-    { id: 3, name: "Aarav Shrestha", class: "11-C", roll: "304", subject: "Physics", marks: 76, grade: "B+", status: "Pass" },
-    { id: 4, name: "Sneha Thapa", class: "10-B", roll: "215", subject: "English", marks: 95, grade: "A+", status: "Pass" },
-    { id: 5, name: "Rohan Mehta", class: "12-B", roll: "208", subject: "Computer Science", marks: 45, grade: "C", status: "Fail" },
-    { id: 6, name: "Priya Rai", class: "11-A", roll: "112", subject: "Chemistry", marks: 32, grade: "F", status: "Fail" },
-    { id: 7, name: "Ankit Thapa", class: "10-A", roll: "105", subject: "Social Studies", marks: 82, grade: "A", status: "Pass" },
-    { id: 8, name: "Meera Joshi", class: "12-C", roll: "301", subject: "Economics", marks: 68, grade: "B", status: "Pass" },
-    { id: 9, name: "Siddharth Dhungana", class: "11-B", roll: "220", subject: "Biology", marks: 74, grade: "B+", status: "Pass" },
-    { id: 10, name: "Kriti Bhatta", class: "10-C", roll: "310", subject: "Mathematics", marks: 55, grade: "C+", status: "Pass" },
-  ]);
+  const auth = useContext(AuthContext);
+  const isAdmin = canAdminManageResults(auth?.user?.role);
 
-  const [openDropdown, setOpenDropdown] = useState<number | null>(null);
+  const [results, setResults] = useState<AcademicResultDTO[]>(createInitialAdminResults);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [viewStudent, setViewStudent] = useState<Result | null>(null);
-  const [editingId, setEditingId] = useState<number | null>(null);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [selectedRow, setSelectedRow] = useState<AcademicResultDTO | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterClass, setFilterClass] = useState("");
+  const [filterClass, setFilterClass] = useState("All classes");
+  const [filterSemester, setFilterSemester] = useState("All semesters");
+  const [csvMessage, setCsvMessage] = useState<{ type: "ok" | "err"; text: string } | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
-  const [formData, setFormData] = useState<ResultFormData>({
-    name: "", class: "", roll: "", subject: "", marks: "",
+  const studentById = useMemo(
+    () => new Map(adminDirectoryStudents.map((s) => [s.id, s])),
+    []
+  );
+  const studentByRoll = useMemo(
+    () => new Map(adminDirectoryStudents.map((s) => [s.rollNo, s])),
+    []
+  );
+  const subjectById = useMemo(() => new Map(demoSubjects.map((s) => [s.id, s])), []);
+  const subjectByCode = useMemo(
+    () => new Map(demoSubjects.map((s) => [s.code.toUpperCase(), s])),
+    []
+  );
+  const semesterById = useMemo(() => new Map(demoSemesters.map((s) => [s.id, s])), []);
+
+  const classLabels = useMemo(() => {
+    const u = new Set<string>();
+    adminDirectoryStudents.forEach((s) => u.add(s.className));
+    return ["All classes", ...[...u].sort()];
+  }, []);
+
+  const semesterLabels = useMemo(
+    () => ["All semesters", ...demoSemesters.sort((a, b) => a.order - b.order).map((s) => s.label)],
+    []
+  );
+
+  const [formData, setFormData] = useState({
+    id: "",
+    studentId: "",
+    subjectId: "",
+    semesterId: "",
+    internalMarks: "",
+    practicalMarks: "",
+    theoryMarks: "",
+    maxInternal: "",
+    maxPractical: "",
+    maxTheory: "",
+    status: "Published" as ResultPublishStatus,
+    facultyId: "",
   });
 
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleOpenForm = (student: Result | null = null) => {
-    setOpenDropdown(null);
-    if (student) {
-      setEditingId(student.id);
-      setFormData({
-        name: student.name, class: student.class,
-        roll: student.roll, subject: student.subject, marks: String(student.marks),
-      });
-    } else {
-      setEditingId(null);
-      setFormData({ name: "", class: "", roll: "", subject: "", marks: "" });
-    }
+  const openCreate = () => {
+    setIsViewModalOpen(false);
+    setSelectedRow(null);
+    setFormData({
+      id: "",
+      studentId: adminDirectoryStudents[0]?.id ?? "",
+      subjectId: demoSubjects[0]?.id ?? "",
+      semesterId: demoSemesters[demoSemesters.length - 1]?.id ?? "",
+      internalMarks: "",
+      practicalMarks: "",
+      theoryMarks: "",
+      maxInternal: "20",
+      maxPractical: "20",
+      maxTheory: "60",
+      status: "Published",
+      facultyId: "",
+    });
     setIsModalOpen(true);
   };
 
-  const handleSave = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const m = parseInt(formData.marks);
-    const grade = m >= 90 ? "A+" : m >= 80 ? "A" : m >= 70 ? "B+" : m >= 60 ? "B" : m >= 40 ? "C" : "F";
-    const status: ResultStatus = m >= 40 ? "Pass" : "Fail";
+  const openEdit = (row: AcademicResultDTO) => {
+    setIsViewModalOpen(false);
+    setSelectedRow(row);
+    setFormData({
+      id: row.id,
+      studentId: row.studentId,
+      subjectId: row.subjectId,
+      semesterId: row.semesterId,
+      internalMarks: String(row.internalMarks),
+      practicalMarks: String(row.practicalMarks),
+      theoryMarks: String(row.theoryMarks),
+      maxInternal: String(row.maxInternal),
+      maxPractical: String(row.maxPractical),
+      maxTheory: String(row.maxTheory),
+      status: row.status,
+      facultyId: row.facultyId ?? "",
+    });
+    setIsModalOpen(true);
+  };
 
-    if (editingId) {
-      setResults(results.map((item) =>
-        item.id === editingId
-          ? { ...formData, id: editingId, marks: m, grade, status }
-          : item
-      ));
+  const saveForm = (e: React.FormEvent) => {
+    e.preventDefault();
+    const maxI = Number(formData.maxInternal);
+    const maxP = Number(formData.maxPractical);
+    const maxT = Number(formData.maxTheory);
+    const i = Number(formData.internalMarks);
+    const p = Number(formData.practicalMarks);
+    const t = Number(formData.theoryMarks);
+    if ([maxI, maxP, maxT, i, p, t].some((x) => Number.isNaN(x))) {
+      window.alert("Enter valid numbers for all marks and maxima.");
+      return;
+    }
+    if (i < 0 || i > maxI || p < 0 || p > maxP || t < 0 || t > maxT) {
+      window.alert(
+        `Marks must be within ranges: internal 0–${maxI}, practical 0–${maxP}, theory 0–${maxT}.`
+      );
+      return;
+    }
+
+    const newId = () =>
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : `r_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+
+    const base: AcademicResultDTO = {
+      id: selectedRow?.id ?? (formData.id.trim() || newId()),
+      studentId: formData.studentId,
+      subjectId: formData.subjectId,
+      semesterId: formData.semesterId,
+      internalMarks: i,
+      practicalMarks: p,
+      theoryMarks: t,
+      totalMarks: 0,
+      maxInternal: maxI,
+      maxPractical: maxP,
+      maxTheory: maxT,
+      gradeLetter: "F",
+      status: formData.status,
+      facultyId: formData.facultyId.trim() || undefined,
+    };
+    const finalized = finalizeAcademicResult(base);
+
+    if (selectedRow) {
+      setResults((prev) => prev.map((x) => (x.id === selectedRow.id ? finalized : x)));
     } else {
-      setResults([{ ...formData, id: Date.now(), marks: m, grade, status }, ...results]);
+      setResults((prev) => [finalized, ...prev]);
     }
     setIsModalOpen(false);
   };
 
-  const handleDelete = (id: number) => {
-    setOpenDropdown(null);
-    if (window.confirm("Are you sure you want to delete this record?")) {
-      setResults(results.filter((item) => item.id !== id));
+  const updateInline = useCallback((id: string, patch: Partial<AcademicResultDTO>) => {
+    setResults((prev) =>
+      prev.map((r) => {
+        if (r.id !== id) return r;
+        const next = { ...r, ...patch };
+        if ("internalMarks" in patch || "practicalMarks" in patch || "theoryMarks" in patch) {
+          next.internalMarks = clamp(next.internalMarks, 0, next.maxInternal);
+          next.practicalMarks = clamp(next.practicalMarks, 0, next.maxPractical);
+          next.theoryMarks = clamp(next.theoryMarks, 0, next.maxTheory);
+        }
+        return finalizeAcademicResult(next);
+      })
+    );
+  }, []);
+
+  const handleDelete = (id: string) => {
+    if (window.confirm("Delete this result row?")) {
+      setResults((prev) => prev.filter((item) => item.id !== id));
     }
   };
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setOpenDropdown(null);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  const filteredResults = useMemo(() => {
+    const semId =
+      filterSemester === "All semesters"
+        ? null
+        : demoSemesters.find((s) => s.label === filterSemester)?.id ?? null;
 
-  const filteredResults = results.filter((item) => {
-    const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) || item.roll.includes(searchQuery);
-    const matchesClass = filterClass === "" || item.class.startsWith(filterClass);
-    return matchesSearch && matchesClass;
-  });
+    return results.filter((row) => {
+      const st = studentById.get(row.studentId);
+      if (!st) return false;
+      const q = searchQuery.trim().toLowerCase();
+      if (q) {
+        const hit =
+          st.name.toLowerCase().includes(q) ||
+          st.rollNo.includes(q) ||
+          (subjectById.get(row.subjectId)?.name.toLowerCase().includes(q) ?? false);
+        if (!hit) return false;
+      }
+      if (filterClass !== "All classes" && st.className !== filterClass) return false;
+      if (semId && row.semesterId !== semId) return false;
+      return true;
+    });
+  }, [results, searchQuery, filterClass, filterSemester, studentById, subjectById]);
+
+  const handleCsvFile: React.ChangeEventHandler<HTMLInputElement> = (e) => {
+    const file = e.target.files?.[0];
+    setCsvMessage(null);
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const text = String(reader.result ?? "");
+      const { rows, errors } = parseResultsCsv(text, {
+        studentsById: new Map(adminDirectoryStudents.map((s) => [s.id, s])),
+        studentsByRoll: studentByRoll,
+        subjectsById: subjectById,
+        subjectsByCode: subjectByCode,
+        validSemesterIds: new Set(demoSemesters.map((s) => s.id)),
+      });
+      if (rows.length === 0 && errors.length > 0) {
+        setCsvMessage({ type: "err", text: errors.map((x) => `Line ${x.line}: ${x.reason}`).join("\n") });
+        return;
+      }
+      setResults((prev) => {
+        const map = new Map(prev.map((r) => [r.id, r]));
+        rows.forEach((r) => map.set(r.id, r));
+        return Array.from(map.values());
+      });
+      const ok = `Imported ${rows.length} row(s).${errors.length ? ` Skipped ${errors.length} line(s).` : ""}`;
+      setCsvMessage({
+        type: errors.length ? "err" : "ok",
+        text:
+          errors.length > 0
+            ? `${ok}\n${errors.map((x) => `Line ${x.line}: ${x.reason}`).join("\n")}`
+            : ok,
+      });
+    };
+    reader.readAsText(file);
+    e.target.value = "";
+  };
+
+  const downloadTemplate = () => {
+    const blob = new Blob([RESULTS_CSV_TEMPLATE], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "results-import-template.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const columns: Column<AcademicResultDTO>[] = useMemo(
+    () => [
+      {
+        header: "Student",
+        render: (row) => {
+          const st = studentById.get(row.studentId);
+          return (
+            <div className="flex items-center gap-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-500">
+                <User size={14} />
+              </div>
+              <span className="font-bold text-slate-800">{st?.name ?? row.studentId}</span>
+            </div>
+          );
+        },
+      },
+      { header: "Roll", render: (row) => <span className="text-slate-600">{studentById.get(row.studentId)?.rollNo}</span> },
+      {
+        header: "Class",
+        render: (row) => (
+          <StatusBadge status={studentById.get(row.studentId)?.className ?? "—"} variant="default" />
+        ),
+      },
+      {
+        header: "Subject",
+        render: (row) => (
+          <div>
+            <p className="font-semibold text-slate-800">{subjectById.get(row.subjectId)?.name}</p>
+            <p className="text-[10px] font-bold text-slate-400">{subjectById.get(row.subjectId)?.code}</p>
+          </div>
+        ),
+      },
+      {
+        header: "Semester",
+        render: (row) => <span className="text-sm text-slate-600">{semesterById.get(row.semesterId)?.label}</span>,
+      },
+      {
+        header: "Int",
+        render: (row) =>
+          isAdmin ? (
+            <input
+              type="number"
+              className="w-14 rounded border border-slate-200 px-1 py-0.5 text-xs font-bold"
+              value={row.internalMarks}
+              min={0}
+              max={row.maxInternal}
+              title={`Internal marks for ${studentById.get(row.studentId)?.name ?? row.studentId}`}
+              aria-label={`Internal marks for ${studentById.get(row.studentId)?.name ?? row.studentId}`}
+              placeholder="0"
+              onChange={(e) =>
+                updateInline(row.id, { internalMarks: Number(e.target.value) })
+              }
+            />
+          ) : (
+            <span>{row.internalMarks}</span>
+          ),
+      },
+      {
+        header: "Pra",
+        render: (row) =>
+          isAdmin ? (
+            <input
+              type="number"
+              className="w-14 rounded border border-slate-200 px-1 py-0.5 text-xs font-bold"
+              value={row.practicalMarks}
+              min={0}
+              max={row.maxPractical}
+              title={`Practical marks for ${studentById.get(row.studentId)?.name ?? row.studentId}`}
+              aria-label={`Practical marks for ${studentById.get(row.studentId)?.name ?? row.studentId}`}
+              placeholder="0"
+              onChange={(e) =>
+                updateInline(row.id, { practicalMarks: Number(e.target.value) })
+              }
+            />
+          ) : (
+            <span>{row.practicalMarks}</span>
+          ),
+      },
+      {
+        header: "The",
+        render: (row) =>
+          isAdmin ? (
+            <input
+              type="number"
+              className="w-14 rounded border border-slate-200 px-1 py-0.5 text-xs font-bold"
+              value={row.theoryMarks}
+              min={0}
+              max={row.maxTheory}
+              title={`Theory marks for ${studentById.get(row.studentId)?.name ?? row.studentId}`}
+              aria-label={`Theory marks for ${studentById.get(row.studentId)?.name ?? row.studentId}`}
+              placeholder="0"
+              onChange={(e) =>
+                updateInline(row.id, { theoryMarks: Number(e.target.value) })
+              }
+            />
+          ) : (
+            <span>{row.theoryMarks}</span>
+          ),
+      },
+      {
+        header: "Total",
+        render: (row) => (
+          <span className="font-black text-slate-800">
+            {row.totalMarks}/{rowMaxTotal(row)}
+          </span>
+        ),
+      },
+      {
+        header: "Grade",
+        render: (row) => {
+          const pct = rowPercentage(row);
+          return (
+            <span className={`rounded-md border px-2 py-0.5 text-[10px] font-black ${gradeClass(pct, row.gradeLetter)}`}>
+              {row.gradeLetter}
+            </span>
+          );
+        },
+      },
+      {
+        header: "Publish",
+        render: (row) =>
+          isAdmin ? (
+            <select
+              className="max-w-[120px] rounded-lg border border-slate-200 px-2 py-1 text-[10px] font-bold text-slate-700"
+              value={row.status}
+              title={`Publish status for ${studentById.get(row.studentId)?.name ?? row.studentId}`}
+              aria-label={`Publish status for ${studentById.get(row.studentId)?.name ?? row.studentId}`}
+              onChange={(e) =>
+                updateInline(row.id, { status: e.target.value as ResultPublishStatus })
+              }
+            >
+              {STATUS_OPTIONS.map((s) => (
+                <option key={s} value={s}>
+                  {s === "UnderReview" ? "Under Review" : s}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <StatusBadge
+              status={row.status === "UnderReview" ? "Under Review" : row.status}
+              variant={row.status === "Published" ? "success" : row.status === "Draft" ? "warning" : "info"}
+            />
+          ),
+      },
+      {
+        header: "Actions",
+        render: (row) => (
+          <div className="flex items-center justify-end gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              type="button"
+              onClick={() => {
+                setSelectedRow(row);
+                setIsViewModalOpen(true);
+              }}
+            >
+              <Eye size={14} className="text-slate-400" />
+            </Button>
+            <Button variant="ghost" size="sm" type="button" onClick={() => openEdit(row)} disabled={!isAdmin}>
+              <Edit2 size={14} className="text-blue-500" />
+            </Button>
+            <Button variant="ghost" size="sm" type="button" onClick={() => handleDelete(row.id)} disabled={!isAdmin}>
+              <Trash2 size={14} className="text-rose-500" />
+            </Button>
+          </div>
+        ),
+      },
+    ],
+    [isAdmin, studentById, subjectById, semesterById, updateInline]
+  );
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen relative">
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-          <h2 className="text-xl font-bold text-gray-800">Result Data</h2>
-          <div className="flex flex-wrap items-center gap-3">
-            <input
-              type="text"
-              placeholder="Search by name or roll no."
-              value={searchQuery}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
-              className="border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 w-64 text-sm"
-            />
-            <select
-              value={filterClass}
-              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFilterClass(e.target.value)}
-              className="border border-gray-300 rounded-md px-4 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-            >
-              <option value="">All Classes</option>
-              <option value="10">Class 10</option>
-              <option value="11">Class 11</option>
-              <option value="12">Class 12</option>
-            </select>
-            <button
-              onClick={() => handleOpenForm()}
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors text-sm font-medium"
-            >
-              <FaPlus size={12} />
-              <span>Add Result</span>
-            </button>
-          </div>
+    <div className="min-h-screen bg-slate-50 p-6 font-sans md:p-8">
+      <div className="mb-8 flex flex-col justify-between gap-6 lg:flex-row lg:items-center">
+        <div>
+          <h1 className="text-2xl font-black tracking-tight text-slate-800">Examination results</h1>
+          <p className="text-sm font-medium text-slate-400">
+            Academic result rows (Student × Subject × Semester). Inline edit & CSV import (demo, frontend only).
+          </p>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-gray-50 border-b border-gray-200">
-                <th className="px-4 py-3 font-semibold text-gray-700 text-sm">Student Name</th>
-                <th className="px-4 py-3 font-semibold text-gray-700 text-sm">Class</th>
-                <th className="px-4 py-3 font-semibold text-gray-700 text-sm">Roll No.</th>
-                <th className="px-4 py-3 font-semibold text-gray-700 text-sm">Marks</th>
-                <th className="px-4 py-3 font-semibold text-gray-700 text-sm">Grade</th>
-                <th className="px-4 py-3 font-semibold text-gray-700 text-sm">Status</th>
-                <th className="px-4 py-3 font-semibold text-gray-700 text-sm text-center">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {filteredResults.map((student, index) => (
-                <tr key={student.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-4 py-4 text-sm font-medium text-gray-800">{student.name}</td>
-                  <td className="px-4 py-4 text-sm text-gray-600">{student.class}</td>
-                  <td className="px-4 py-4 text-sm text-gray-600">{student.roll}</td>
-                  <td className="px-4 py-4 text-sm font-bold text-gray-700">{student.marks}</td>
-                  <td className="px-4 py-4 text-sm font-bold text-gray-700">{student.grade}</td>
-                  <td className="px-4 py-4 text-sm font-bold text-gray-700">{student.status}</td>
-                  <td className="px-4 py-4 text-center relative">
-                    <button
-                      onClick={() => setOpenDropdown(openDropdown === index ? null : index)}
-                      className="p-2 hover:bg-gray-200 rounded-full transition-colors focus:outline-none"
-                    >
-                      <FaEllipsisH className="text-gray-400" />
-                    </button>
-                    {openDropdown === index && (
-                      <div ref={dropdownRef} className="absolute right-0 mt-2 w-32 bg-white border border-gray-200 rounded-md shadow-xl z-50 overflow-hidden">
-                        <ul className="py-1 text-sm text-gray-700 text-left">
-                          <li onClick={() => { setViewStudent(student); setOpenDropdown(null); }} className="flex items-center gap-3 px-4 py-2 hover:bg-blue-50 cursor-pointer">
-                            <FaEye className="text-blue-500" /> View
-                          </li>
-                          <li onClick={() => handleOpenForm(student)} className="flex items-center gap-3 px-4 py-2 hover:bg-green-50 cursor-pointer">
-                            <FaEdit className="text-green-500" /> Edit
-                          </li>
-                          <li onClick={() => handleDelete(student.id)} className="flex items-center gap-3 px-4 py-2 hover:bg-red-50 text-red-600 cursor-pointer">
-                            <FaTrash /> Delete
-                          </li>
-                        </ul>
-                      </div>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {filteredResults.length === 0 && (
-            <div className="text-center py-10 text-gray-500 text-sm">No records found matching your search.</div>
-          )}
+        <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+          <Input
+            placeholder="Search name, roll, subject..."
+            icon={Search}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full sm:w-64"
+          />
+          <Select
+            options={classLabels}
+            value={filterClass}
+            onChange={(e) => setFilterClass(e.target.value)}
+            className="w-full sm:w-44"
+          />
+          <Select
+            options={semesterLabels}
+            value={filterSemester}
+            onChange={(e) => setFilterSemester(e.target.value)}
+            className="w-full sm:w-44"
+          />
+          <input
+            ref={fileRef}
+            type="file"
+            accept=".csv,text/csv"
+            className="hidden"
+            title="Import result CSV"
+            aria-label="Import result CSV"
+            onChange={handleCsvFile}
+          />
+          <Button
+            variant="outline"
+            type="button"
+            className="gap-2"
+            onClick={() => fileRef.current?.click()}
+            disabled={!isAdmin}
+          >
+            <Upload size={18} />
+            Import CSV
+          </Button>
+          <Button variant="outline" type="button" className="gap-2" onClick={downloadTemplate}>
+            <Download size={18} />
+            Template
+          </Button>
+          <Button
+            variant="primary"
+            type="button"
+            className="gap-2 shadow-lg shadow-blue-100"
+            onClick={openCreate}
+            disabled={!isAdmin}
+          >
+            <Plus size={18} />
+            Add result
+          </Button>
         </div>
       </div>
 
-      {isModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="fixed inset-0 bg-black/30 backdrop-blur-[2px]" onClick={() => setIsModalOpen(false)}></div>
-          <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-md z-[110]">
-            <div className="p-6">
-              <h3 className="text-xl font-bold text-gray-800 mb-6">{editingId ? "Edit Student Result" : "Add new Result"}</h3>
-              <form className="space-y-4" onSubmit={handleSave}>
-                <input required name="name" type="text" value={formData.name} onChange={handleChange} className="w-full border p-2 rounded text-sm outline-none focus:ring-2 focus:ring-blue-500" placeholder="Student Name" />
-                <div className="flex gap-4">
-                  <input required name="class" type="text" value={formData.class} onChange={handleChange} className="flex-1 border p-2 rounded text-sm outline-none focus:ring-2 focus:ring-blue-500" placeholder="Class (e.g. 12-A)" />
-                  <input required name="roll" type="text" value={formData.roll} onChange={handleChange} className="flex-1 border p-2 rounded text-sm outline-none focus:ring-2 focus:ring-blue-500" placeholder="Roll No" />
-                </div>
-                <div className="flex gap-4">
-                  <input required name="subject" type="text" value={formData.subject} onChange={handleChange} className="flex-1 border p-2 rounded text-sm outline-none focus:ring-2 focus:ring-blue-500" placeholder="Subject" />
-                  <input required name="marks" type="number" value={formData.marks} onChange={handleChange} className="flex-1 border p-2 rounded text-sm outline-none focus:ring-2 focus:ring-blue-500" placeholder="Marks" />
-                </div>
-                <div className="flex justify-end gap-3 pt-4 border-t mt-6">
-                  <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded">Cancel</button>
-                  <button type="submit" className="px-4 py-2 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded shadow-sm">Save Record</button>
-                </div>
-              </form>
-            </div>
-          </div>
+      {csvMessage && (
+        <div
+          className={`mb-6 flex gap-3 rounded-2xl border p-4 text-sm ${
+            csvMessage.type === "ok"
+              ? "border-emerald-200 bg-emerald-50 text-emerald-900"
+              : "border-amber-200 bg-amber-50 text-amber-950"
+          }`}
+        >
+          <AlertCircle className="h-5 w-5 shrink-0" />
+          <pre className="whitespace-pre-wrap font-sans">{csvMessage.text}</pre>
         </div>
       )}
 
-      {viewStudent && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setViewStudent(null)}></div>
-          <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-sm z-[110] p-6">
-            <div className="flex justify-between items-center border-b pb-3 mb-4">
-              <h3 className="text-lg font-bold">Student Details</h3>
-              <button onClick={() => setViewStudent(null)} className="text-gray-400 hover:text-gray-800"><FaTimes /></button>
-            </div>
-            <div className="space-y-3 text-sm">
-              <p><strong>Name:</strong> {viewStudent.name}</p>
-              <p><strong>Class:</strong> {viewStudent.class}</p>
-              <p><strong>Roll No:</strong> {viewStudent.roll}</p>
-              <p><strong>Subject:</strong> {viewStudent.subject}</p>
-              <p><strong>Marks:</strong> {viewStudent.marks}</p>
-              <p><strong>Grade:</strong> <span className="text-blue-600 font-bold">{viewStudent.grade}</span></p>
-            </div>
-            <button onClick={() => setViewStudent(null)} className="mt-6 w-full py-2 bg-blue-600 text-white rounded text-sm font-medium">Close</button>
+      <Card noPadding className="overflow-hidden border-none bg-white shadow-xl shadow-slate-200/50">
+        <DataTable
+          columns={columns}
+          data={filteredResults}
+          emptyMessage="No examination records found matching your filters."
+        />
+      </Card>
+
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title={selectedRow ? "Update result" : "New result entry"}
+      >
+        <form onSubmit={saveForm} className="space-y-4">
+          <Select
+            label="Student"
+            options={adminDirectoryStudents.map((s) => `${s.name} (${s.rollNo})`)}
+            value={
+              adminDirectoryStudents.find((s) => s.id === formData.studentId)
+                ? `${adminDirectoryStudents.find((s) => s.id === formData.studentId)!.name} (${adminDirectoryStudents.find((s) => s.id === formData.studentId)!.rollNo})`
+                : ""
+            }
+            onChange={(e) => {
+              const picked = adminDirectoryStudents.find(
+                (s) => `${s.name} (${s.rollNo})` === e.target.value
+              );
+              if (picked) setFormData((f) => ({ ...f, studentId: picked.id }));
+            }}
+            required
+          />
+          <div className="grid grid-cols-2 gap-4">
+            <Select
+              label="Subject"
+              options={demoSubjects.map((s) => `${s.name} (${s.code})`)}
+              value={
+                demoSubjects.find((s) => s.id === formData.subjectId)
+                  ? `${demoSubjects.find((s) => s.id === formData.subjectId)!.name} (${demoSubjects.find((s) => s.id === formData.subjectId)!.code})`
+                  : ""
+              }
+              onChange={(e) => {
+                const picked = demoSubjects.find((s) => `${s.name} (${s.code})` === e.target.value);
+                if (picked) setFormData((f) => ({ ...f, subjectId: picked.id }));
+              }}
+              required
+            />
+            <Select
+              label="Semester"
+              options={demoSemesters.map((s) => s.label)}
+              value={demoSemesters.find((s) => s.id === formData.semesterId)?.label ?? ""}
+              onChange={(e) => {
+                const picked = demoSemesters.find((s) => s.label === e.target.value);
+                if (picked) setFormData((f) => ({ ...f, semesterId: picked.id }));
+              }}
+              required
+            />
           </div>
-        </div>
+          <div className="grid grid-cols-3 gap-3">
+            <Input
+              label="Internal"
+              type="number"
+              icon={Award}
+              value={formData.internalMarks}
+              onChange={(e) => setFormData({ ...formData, internalMarks: e.target.value })}
+              required
+            />
+            <Input
+              label="Practical"
+              type="number"
+              icon={Award}
+              value={formData.practicalMarks}
+              onChange={(e) => setFormData({ ...formData, practicalMarks: e.target.value })}
+              required
+            />
+            <Input
+              label="Theory"
+              type="number"
+              icon={Award}
+              value={formData.theoryMarks}
+              onChange={(e) => setFormData({ ...formData, theoryMarks: e.target.value })}
+              required
+            />
+          </div>
+          <div className="grid grid-cols-3 gap-3">
+            <Input
+              label="Max internal"
+              type="number"
+              icon={Hash}
+              value={formData.maxInternal}
+              onChange={(e) => setFormData({ ...formData, maxInternal: e.target.value })}
+              required
+            />
+            <Input
+              label="Max practical"
+              type="number"
+              icon={Hash}
+              value={formData.maxPractical}
+              onChange={(e) => setFormData({ ...formData, maxPractical: e.target.value })}
+              required
+            />
+            <Input
+              label="Max theory"
+              type="number"
+              icon={Hash}
+              value={formData.maxTheory}
+              onChange={(e) => setFormData({ ...formData, maxTheory: e.target.value })}
+              required
+            />
+          </div>
+          <Select
+            label="Status"
+            options={STATUS_OPTIONS.map((s) => (s === "UnderReview" ? "Under Review" : s))}
+            value={formData.status === "UnderReview" ? "Under Review" : formData.status}
+            onChange={(e) => {
+              const v = e.target.value;
+              setFormData((f) => ({
+                ...f,
+                status: v === "Under Review" ? "UnderReview" : (v as ResultPublishStatus),
+              }));
+            }}
+          />
+          <Input
+            label="Faculty id (optional)"
+            icon={User}
+            placeholder="usr_teacher"
+            value={formData.facultyId}
+            onChange={(e) => setFormData({ ...formData, facultyId: e.target.value })}
+          />
+
+          <div className="mt-8 flex justify-end gap-3 border-t border-slate-50 pt-4">
+            <Button variant="ghost" type="button" onClick={() => setIsModalOpen(false)}>
+              Discard
+            </Button>
+            <Button variant="primary" type="submit" className="px-10">
+              {selectedRow ? "Update" : "Save"}
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {selectedRow && (
+        <Modal
+          isOpen={isViewModalOpen}
+          onClose={() => setIsViewModalOpen(false)}
+          title="Result detail"
+        >
+          {(() => {
+            const st = studentById.get(selectedRow.studentId);
+            const sub = subjectById.get(selectedRow.subjectId);
+            const sem = semesterById.get(selectedRow.semesterId);
+            const pct = rowPercentage(selectedRow);
+            return (
+              <div className="space-y-6">
+                <div className="flex items-center gap-4 rounded-2xl bg-slate-50 p-4">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-blue-600 text-xl font-black text-white shadow-lg shadow-blue-100">
+                    {(st?.name ?? "?").charAt(0)}
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-black leading-none text-slate-800">{st?.name}</h2>
+                    <p className="mt-2 text-xs font-bold uppercase tracking-widest text-slate-400">
+                      Roll {st?.rollNo} · {st?.className}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="rounded-2xl border border-slate-100 bg-white p-4">
+                    <p className="mb-1 text-[10px] font-black uppercase tracking-widest text-slate-400">Subject</p>
+                    <p className="font-bold text-slate-700">{sub?.name}</p>
+                    <p className="text-xs text-slate-400">{sub?.code}</p>
+                  </div>
+                  <div className="rounded-2xl border border-slate-100 bg-white p-4">
+                    <p className="mb-1 text-[10px] font-black uppercase tracking-widest text-slate-400">Semester</p>
+                    <p className="font-bold text-slate-700">{sem?.label}</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-3 text-sm">
+                  <div className="rounded-xl bg-slate-50 p-3 text-center">
+                    <p className="text-[10px] font-black text-slate-400">Internal</p>
+                    <p className="font-black text-slate-800">
+                      {selectedRow.internalMarks}/{selectedRow.maxInternal}
+                    </p>
+                  </div>
+                  <div className="rounded-xl bg-slate-50 p-3 text-center">
+                    <p className="text-[10px] font-black text-slate-400">Practical</p>
+                    <p className="font-black text-slate-800">
+                      {selectedRow.practicalMarks}/{selectedRow.maxPractical}
+                    </p>
+                  </div>
+                  <div className="rounded-xl bg-slate-50 p-3 text-center">
+                    <p className="text-[10px] font-black text-slate-400">Theory</p>
+                    <p className="font-black text-slate-800">
+                      {selectedRow.theoryMarks}/{selectedRow.maxTheory}
+                    </p>
+                  </div>
+                </div>
+
+                <div
+                  className={`flex items-center justify-between rounded-2xl border p-4 ${
+                    pct >= 40 ? "border-emerald-100 bg-emerald-50" : "border-rose-100 bg-rose-50"
+                  }`}
+                >
+                  <div>
+                    <p className="mb-1 text-[10px] font-black uppercase tracking-widest text-slate-500">Grade</p>
+                    <p className="text-2xl font-black text-slate-900">{selectedRow.gradeLetter}</p>
+                    <p className="text-xs text-slate-500">{pct.toFixed(1)}% aggregate</p>
+                  </div>
+                  <StatusBadge
+                    status={selectedRow.status === "UnderReview" ? "Under Review" : selectedRow.status}
+                    variant={
+                      selectedRow.status === "Published"
+                        ? "success"
+                        : selectedRow.status === "Draft"
+                          ? "warning"
+                          : "info"
+                    }
+                  />
+                </div>
+
+                <Button variant="outline" className="w-full" type="button" onClick={() => setIsViewModalOpen(false)}>
+                  Close
+                </Button>
+              </div>
+            );
+          })()}
+        </Modal>
       )}
     </div>
   );

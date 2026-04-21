@@ -1,4 +1,6 @@
+import React from 'react';
 import { Search, Plus, Pin, Calendar, User } from "lucide-react";
+import { Button, Input, Card, StatusBadge } from '../ui';
 
 interface PinnedAnnouncement {
   id: number;
@@ -17,7 +19,7 @@ interface RecentAnnouncement {
   author: string;
 }
 
-const AdminAnnouncementData = () => {
+const AdminAnnouncementData: React.FC = () => {
   const pinnedAnnouncements: PinnedAnnouncement[] = [
     {
       id: 1,
@@ -51,14 +53,18 @@ const AdminAnnouncementData = () => {
 
   return (
     <div className="p-6 bg-slate-50 min-h-screen font-sans text-slate-900">
+      {/* Header Section using Input and Button components */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <input type="text" placeholder="Search announcement..." className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" />
+          <Input 
+            placeholder="Search announcement..." 
+            className="pl-10" // Adding padding for the absolute icon
+          />
+          <Search className="absolute left-3 top-[38px] -translate-y-1/2 w-4 h-4 text-slate-400" />
         </div>
-        <button className="flex items-center justify-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-xl font-semibold shadow-md hover:bg-blue-700 transition-all active:scale-95">
+        <Button variant="primary" className="gap-2">
           <Plus className="w-4 h-4" /> New Announcement
-        </button>
+        </Button>
       </div>
 
       <div className="flex items-center gap-2 mb-6">
@@ -66,14 +72,15 @@ const AdminAnnouncementData = () => {
         <h2 className="text-lg font-bold">Pinned Announcements</h2>
       </div>
 
+      {/* Pinned Section using Card and StatusBadge */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
         {pinnedAnnouncements.map((item) => (
-          <div key={item.id} className="bg-gray-100 border border-slate-200 rounded-2xl p-6 shadow-sm">
+          <Card key={item.id} className="hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between mb-4">
               <Pin className="w-4 h-4 text-blue-600 fill-blue-600" />
               <div className="flex gap-2">
-                <span className="px-3 py-1 bg-red-50 text-red-600 text-[10px] font-bold rounded-full border border-red-100">{item.priority}</span>
-                <span className="px-3 py-1 bg-slate-100 text-blue-600 text-[10px] font-bold rounded-full">{item.audience}</span>
+                <StatusBadge status={item.priority} variant="danger" />
+                <StatusBadge status={item.audience} variant="info" />
               </div>
             </div>
             <div className="mb-6">
@@ -82,14 +89,17 @@ const AdminAnnouncementData = () => {
             </div>
             <div className="flex items-center justify-between pt-4 border-t border-slate-50">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xs">{getInitials(item.author)}</div>
+                <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xs">
+                  {getInitials(item.author)}
+                </div>
                 <span className="text-sm font-semibold text-slate-700">{item.author}</span>
               </div>
               <div className="flex items-center gap-1.5 text-slate-400">
-                <Calendar className="w-3.5 h-3.5" /> <span className="text-xs">{item.date}</span>
+                <Calendar className="w-3.5 h-3.5" /> 
+                <span className="text-xs">{item.date}</span>
               </div>
             </div>
-          </div>
+          </Card>
         ))}
       </div>
 
@@ -97,16 +107,13 @@ const AdminAnnouncementData = () => {
         <h2 className="text-lg font-bold text-slate-800">Recent Announcements</h2>
       </div>
 
+      {/* Recent Section using Card and StatusBadge */}
       <div className="flex flex-col lg:flex-row gap-6">
         {recentAnnouncements.map((item) => (
-          <div key={item.id} className="flex-1 bg-white border border-slate-200 rounded-2xl p-5 shadow-sm hover:border-blue-200 transition-colors">
+          <Card key={item.id} className="flex-1 hover:border-blue-200 transition-colors">
             <div className="flex gap-2 mb-4">
-              <button className="px-3 py-1 bg-orange-50 text-orange-600 text-[10px] font-bold uppercase rounded-md border border-orange-100">
-                Medium
-              </button>
-              <button className="px-3 py-1 bg-blue-50 text-blue-600 text-[10px] font-bold uppercase rounded-md border border-blue-100">
-                Students
-              </button>
+              <StatusBadge status="Medium" variant="warning" />
+              <StatusBadge status="Students" variant="info" />
             </div>
             <div className="mb-5">
               <h3 className="text-sm font-bold text-slate-900 mb-1">{item.title}</h3>
@@ -126,7 +133,7 @@ const AdminAnnouncementData = () => {
                 <span className="text-[10px]">{item.date}</span>
               </div>
             </div>
-          </div>
+          </Card>
         ))}
       </div>
     </div>

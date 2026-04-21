@@ -1,38 +1,53 @@
 import type { LucideIcon } from "lucide-react";
 import {
   LayoutDashboard,
-  Users,
-  GraduationCap,
-  BookOpen,
   ClipboardCheck,
   Clock,
+  BookOpen,
+  BarChart3,
   CalendarDays,
   Megaphone,
-  UserPlus,
   CheckCircle2,
+  FileClock,
+  TrendingUp,
+  NotebookTabs,
+  Target,
+  CircleCheck,
+  BellRing,
 } from "lucide-react";
 
-interface SidebarItem {
+export interface StudentSidebarItem {
   icon: LucideIcon;
   label: string;
+  description?: string;
 }
 
-interface StatCard {
+export interface StudentSidebarGroup {
+  title: string;
+  items: StudentSidebarItem[];
+}
+
+export interface StudentScreenMeta {
+  subtitle: string;
+  searchPlaceholder: string;
+}
+
+interface StudentHomeKpi {
   title: string;
   value: string;
-  sub: string;
-  change: string | null;
-  changeLabel: string | null;
+  trend: number;
   icon: LucideIcon;
-  color: string;
+  colorClass: string;
+  bgClass: string;
 }
 
-interface ChartDatum {
-  day: string;
-  value: number;
+interface StudentHomeFocus {
+  title: string;
+  detail: string;
+  status: "on-track" | "attention";
 }
 
-interface Activity {
+interface StudentActivity {
   icon: LucideIcon;
   title: string;
   desc: string;
@@ -40,34 +55,144 @@ interface Activity {
   color: string;
 }
 
-export const sidebarItems: SidebarItem[] = [
-  { icon: LayoutDashboard, label: "Dashboard" },
-  { icon: ClipboardCheck, label: "Attendance" },
-  { icon: Clock, label: "Timetable" },
-  { icon: BookOpen, label: "Homework" },
-  { icon: CalendarDays, label: "Events" },
-  { icon: Megaphone, label: "Announcements" },
+export const STUDENT_SIDEBAR_GROUPS: StudentSidebarGroup[] = [
+  {
+    title: "Workspace",
+    items: [
+      { icon: LayoutDashboard, label: "Dashboard", description: "Today overview" },
+      { icon: ClipboardCheck, label: "Attendance", description: "Presence and leave" },
+      { icon: Clock, label: "Timetable", description: "Daily schedule" },
+    ],
+  },
+  {
+    title: "Academics",
+    items: [
+      { icon: BookOpen, label: "Homework", description: "Assignments and submissions" },
+      { icon: BarChart3, label: "Results", description: "Exam performance" },
+    ],
+  },
+  {
+    title: "Campus",
+    items: [
+      { icon: CalendarDays, label: "Events", description: "Upcoming activities" },
+      { icon: Megaphone, label: "Announcements", description: "Notices and updates" },
+    ],
+  },
 ];
 
-export const statsCards: StatCard[] = [
-  { title: "Total Students", value: "1,234", sub: "Active enrollments", change: "+12%", changeLabel: "from last month", icon: GraduationCap, color: "bg-blue-100 text-blue-600" },
-  { title: "Total Teachers", value: "89", sub: "Across all departments", change: "+5%", changeLabel: "from last month", icon: Users, color: "bg-cyan-100 text-cyan-600" },
-  { title: "Active Classes", value: "45", sub: "12 sections", change: null, changeLabel: null, icon: BookOpen, color: "bg-orange-100 text-orange-600" },
-  { title: "Today's Attendance", value: "92%", sub: "1,135 students present", change: "+3%", changeLabel: "from last month", icon: CheckCircle2, color: "bg-emerald-100 text-emerald-600" },
+export const STUDENT_SCREEN_META: Record<string, StudentScreenMeta> = {
+  Dashboard: {
+    subtitle: "Track classes, submissions, and progress from one workspace.",
+    searchPlaceholder: "Search modules, notes, or deadlines...",
+  },
+  Attendance: {
+    subtitle: "Review attendance trends, leaves, and today's status.",
+    searchPlaceholder: "Search by subject, date, or status...",
+  },
+  Timetable: {
+    subtitle: "Check periods, faculty slots, and class timings.",
+    searchPlaceholder: "Search timetable entries...",
+  },
+  Homework: {
+    subtitle: "Organize assignments with clear due-date priorities.",
+    searchPlaceholder: "Search by subject or assignment...",
+  },
+  Results: {
+    subtitle: "View marks, GPA trajectory, and performance insights.",
+    searchPlaceholder: "Search by exam, subject, or semester...",
+  },
+  Events: {
+    subtitle: "Stay informed about school events and participation.",
+    searchPlaceholder: "Search events or activities...",
+  },
+  Announcements: {
+    subtitle: "Read institutional communication and alerts quickly.",
+    searchPlaceholder: "Search announcements...",
+  },
+};
+
+export function getStudentScreenMeta(activeItem: string): StudentScreenMeta {
+  return (
+    STUDENT_SCREEN_META[activeItem] ?? {
+      subtitle: "Student workspace overview",
+      searchPlaceholder: "Search...",
+    }
+  );
+}
+
+export const studentHomeKpis: StudentHomeKpi[] = [
+  {
+    title: "Attendance",
+    value: "94.2%",
+    trend: 2,
+    icon: CheckCircle2,
+    colorClass: "text-emerald-600",
+    bgClass: "bg-emerald-50",
+  },
+  {
+    title: "Pending Homework",
+    value: "03",
+    trend: -1,
+    icon: FileClock,
+    colorClass: "text-amber-600",
+    bgClass: "bg-amber-50",
+  },
+  {
+    title: "Current GPA",
+    value: "3.78",
+    trend: 4,
+    icon: TrendingUp,
+    colorClass: "text-blue-600",
+    bgClass: "bg-blue-50",
+  },
+  {
+    title: "This Week Classes",
+    value: "28",
+    trend: 0,
+    icon: NotebookTabs,
+    colorClass: "text-violet-600",
+    bgClass: "bg-violet-50",
+  },
 ];
 
-export const chartData: ChartDatum[] = [
-  { day: "Mon", value: 85 },
-  { day: "Tue", value: 78 },
-  { day: "Wed", value: 90 },
-  { day: "Thu", value: 88 },
-  { day: "Fri", value: 92 },
-  { day: "Sat", value: 70 },
-  { day: "Sun", value: 95 },
+export const studentHomeFocus: StudentHomeFocus[] = [
+  {
+    title: "Physics practical file",
+    detail: "Due tomorrow • Not submitted",
+    status: "attention",
+  },
+  {
+    title: "Mathematics revision set",
+    detail: "Due in 2 days • 70% complete",
+    status: "on-track",
+  },
+  {
+    title: "English speaking assessment",
+    detail: "Scheduled Friday • Preparation pending",
+    status: "attention",
+  },
 ];
 
-export const activities: Activity[] = [
-  { icon: UserPlus, title: "New student enrolled", desc: "Emma Watson joined Class 10A", time: "5 minutes ago", color: "bg-blue-100 text-blue-600" },
-  { icon: ClipboardCheck, title: "Attendance marked", desc: "Class 8B attendance completed", time: "15 minutes ago", color: "bg-emerald-100 text-emerald-600" },
-  { icon: Megaphone, title: "New announcement", desc: "Annual sports day schedule published", time: "1 hour ago", color: "bg-orange-100 text-orange-600" },
+export const studentHomeActivities: StudentActivity[] = [
+  {
+    icon: CircleCheck,
+    title: "Homework submitted",
+    desc: "Chemistry assignment uploaded successfully.",
+    time: "20 minutes ago",
+    color: "bg-emerald-100 text-emerald-700",
+  },
+  {
+    icon: BellRing,
+    title: "New announcement",
+    desc: "Unit test timetable published for this month.",
+    time: "1 hour ago",
+    color: "bg-blue-100 text-blue-700",
+  },
+  {
+    icon: Target,
+    title: "Performance update",
+    desc: "Mathematics score improved by 8% this week.",
+    time: "Yesterday",
+    color: "bg-violet-100 text-violet-700",
+  },
 ];

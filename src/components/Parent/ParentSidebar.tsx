@@ -1,25 +1,16 @@
 import { useContext } from "react";
 import { AuthContext } from "../../context/AuthContext";
-import type { LucideIcon } from "lucide-react";
 import {
-  UserCircle,
-  CalendarCheck,
-  GraduationCap,
-  Clock,
-  Megaphone,
   LogOut,
   X,
   ChevronLeft,
   ChevronRight,
   User,
-  Home
 } from "lucide-react";
 import { useNavigate } from "react-router";
+import { Button } from "../ui";
+import type { ParentSidebarGroup } from "../../data/parentdashboardData";
 
-interface SidebarItem {
-  icon: LucideIcon;
-  label: string;
-}
 
 interface ParentSidebarProps {
   collapsed: boolean;
@@ -28,6 +19,7 @@ interface ParentSidebarProps {
   setMobileOpen: (value: boolean) => void;
   activeItem: string;
   setActiveItem: (value: string) => void;
+  sidebarGroups: ParentSidebarGroup[];
 }
 
 const ParentSidebar = ({
@@ -37,18 +29,10 @@ const ParentSidebar = ({
   setMobileOpen,
   activeItem,
   setActiveItem,
+  sidebarGroups,
 }: ParentSidebarProps) => {
   const auth = useContext(AuthContext);
   const navigate = useNavigate();
-
-  const sidebarItems: SidebarItem[] = [
-    { icon: Home, label: "Overview" },
-    { icon: UserCircle, label: "Child Profile" },
-    { icon: CalendarCheck, label: "Attendance" },
-    { icon: GraduationCap, label: "Grades and Reports" },
-    { icon: Clock, label: "Timetable" },
-    { icon: Megaphone, label: "Announcements" },
-  ];
 
   const handleLogout = () => {
     auth?.logout();
@@ -83,8 +67,8 @@ const ParentSidebar = ({
 
             {!collapsed && (
               <div className="overflow-hidden">
-                <h2 className="font-bold text-gray-800 text-sm truncate">Ishan Awasthi</h2>
-                <p className="text-[11px] text-gray-400 font-medium">Grade 10-A • Roll: 24</p>
+                <h2 className="font-bold text-gray-800 text-sm truncate">{auth?.user?.name ?? "Parent User"}</h2>
+                <p className="text-[11px] text-gray-400 font-medium">Parent Portal</p>
               </div>
             )}
           </div>
@@ -96,32 +80,54 @@ const ParentSidebar = ({
             {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
           </button>
 
-          <button onClick={() => setMobileOpen(false)} className="ml-auto text-gray-500 lg:hidden">
+          <Button
+            type="button"
+            onClick={() => setMobileOpen(false)}
+            className="ml-auto text-gray-500 lg:hidden"
+            aria-label="Close parent sidebar"
+            title="Close parent sidebar"
+          >
             <X size={20} />
-          </button>
+          </Button>
         </div>
 
-        <nav className="flex-1 p-3 space-y-1 overflow-y-auto mt-4">
-          {sidebarItems.map((item) => {
-            const isActive = activeItem === item.label;
-            return (
-              <button
-                key={item.label}
-                onClick={() => {
-                  setActiveItem(item.label);
-                  setMobileOpen(false);
-                }}
-                className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-bold transition-all ${
-                  isActive
-                    ? "bg-blue-500 text-white shadow-lg shadow-blue-100"
-                    : "text-gray-500 hover:bg-gray-50 hover:text-blue-500"
-                }`}
-              >
-                <item.icon className={`w-5 h-5 ${isActive ? "text-white" : "text-gray-400"}`} />
-                {!collapsed && <span>{item.label}</span>}
-              </button>
-            );
-          })}
+        <nav className="mt-4 flex-1 space-y-5 overflow-y-auto p-3">
+          {sidebarGroups.map((group) => (
+            <div key={group.title} className="space-y-1">
+              {!collapsed && (
+                <p className="px-2 text-[10px] font-black uppercase tracking-[0.15em] text-slate-400">{group.title}</p>
+              )}
+              {group.items.map((item) => {
+                const isActive = activeItem === item.label;
+                return (
+                  <button
+                    key={item.label}
+                    onClick={() => {
+                      setActiveItem(item.label);
+                      setMobileOpen(false);
+                    }}
+                    className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-bold transition-all text-left ${
+                      isActive
+                        ? "bg-blue-500 text-white shadow-lg shadow-blue-100"
+                        : "text-gray-500 hover:bg-gray-50 hover:text-blue-500"
+                    }`}
+                  >
+                    <item.icon className={`w-5 h-5 ${isActive ? "text-white" : "text-gray-400"}`} />
+                    {!collapsed && (
+                      <div className="min-w-0">
+                        <p className="truncate">{item.label}</p>
+                        {item.description ? (
+                          <p className={`truncate text-[10px] font-medium ${isActive ? "text-blue-100" : "text-slate-400"}`}>
+                            {item.description}
+                          </p>
+                        ) : null}
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          ))}
         </nav>
 
         <div className="p-4 border-t border-gray-100">

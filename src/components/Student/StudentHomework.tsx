@@ -1,210 +1,310 @@
-import { useState, useContext } from "react";
-import type { LucideIcon } from "lucide-react";
-import { Plus, Search, Calendar, BookOpen, Clock, CheckCircle, Circle, Edit, Trash2, MoreHorizontal } from "lucide-react";
-import { AuthContext } from "../../context/AuthContext";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import {
+  AlertCircle,
+  BookOpen,
+  Calendar,
+  CheckCircle2,
+  Clock,
+  FileUp,
+  Search,
+} from "lucide-react";
+import { useDebounce } from "../../hooks/useDebounce";
+import { Button, Card, DataTable, Input, StatCard, StatusBadge } from "../ui";
+import { Modal } from "../ui/Modal";
+import {
+  StudentEmptyState,
+  StudentMetricSkeleton,
+  StudentTableSkeleton,
+} from "./shared/StudentModuleStates";
 
-type HomeworkStatus = "pending" | "submitted" | "graded";
+type HomeworkStatus = "pending" | "submitted" | "graded" | "overdue";
 
 interface HomeworkItem {
   id: number;
   subject: string;
   title: string;
-  description: string;
-  class: string;
-  teacher: string;
   dueDate: string;
-  assignedDate: string;
   status: HomeworkStatus;
+  priority: "high" | "medium" | "low";
+  description: string;
 }
 
-interface StatusConfigEntry {
-  label: string;
-  color: string;
-  Icon: LucideIcon;
-}
-
-const homeworkData: HomeworkItem[] = [
-  { id: 1, subject: "Mathematics", title: "Quadratic Equations Practice", description: "Solve exercises 1-20 from Chapter 5. Show all working steps.", class: "10A", teacher: "Dr. Sarah Johnson", dueDate: "2025-12-25", assignedDate: "2025-12-20", status: "pending" },
-  { id: 2, subject: "Physics", title: "Newton's Laws Report", description: "Write a 500-word report on real-world applications of Newton's laws of motion.", class: "10A", teacher: "Prof. Michael Chen", dueDate: "2025-12-27", assignedDate: "2025-12-19", status: "pending" },
-  { id: 3, subject: "English", title: "Essay Writing", description: 'Write an essay on "The Impact of Technology on Modern Education" (800-1000 words).', class: "10A", teacher: "Ms. Emily Davis", dueDate: "2025-12-24", assignedDate: "2025-12-18", status: "submitted" },
-  { id: 4, subject: "Chemistry", title: "Lab Report: Titration", description: "Complete the lab report for the acid-base titration experiment conducted in class.", class: "10A", teacher: "Mr. Robert Wilson", dueDate: "2025-12-23", assignedDate: "2025-12-17", status: "graded" },
-  { id: 5, subject: "Biology", title: "Cell Division Diagrams", description: "Draw and label diagrams for mitosis and meiosis. Include all phases.", class: "10A", teacher: "Dr. Lisa Anderson", dueDate: "2025-12-26", assignedDate: "2025-12-20", status: "pending" },
+const HOMEWORK_DATA: HomeworkItem[] = [
+  {
+    id: 1,
+    subject: "Mathematics",
+    title: "Quadratic Equations Practice",
+    dueDate: "2026-03-28",
+    status: "pending",
+    priority: "high",
+    description: "Complete exercises 5.1 to 5.4. Focus on discriminant-based problem solving.",
+  },
+  {
+    id: 2,
+    subject: "Physics",
+    title: "Newton's Laws Lab Report",
+    dueDate: "2026-03-30",
+    status: "pending",
+    priority: "medium",
+    description: "Submit a 500-word summary of the friction experiment with observations.",
+  },
+  {
+    id: 3,
+    subject: "English",
+    title: "Modern Education Essay",
+    dueDate: "2026-03-25",
+    status: "submitted",
+    priority: "low",
+    description: "Final draft of persuasive essay regarding digital literacy in schools.",
+  },
+  {
+    id: 4,
+    subject: "Chemistry",
+    title: "Organic Worksheet",
+    dueDate: "2026-03-22",
+    status: "graded",
+    priority: "medium",
+    description: "Worksheet on alkanes, alkenes, and reaction balancing.",
+  },
 ];
 
-const subjectColors: Record<string, string> = {
-  Mathematics: "bg-blue-100 text-blue-700 border border-blue-200",
-  Physics: "bg-purple-100 text-purple-700 border border-purple-200",
-  English: "bg-yellow-100 text-yellow-700 border border-yellow-200",
-  Chemistry: "bg-green-100 text-green-700 border border-green-200",
-  Biology: "bg-red-100 text-red-700 border border-red-200",
-};
+export default function StudentHomework() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchTerm, setSearchTerm] = useState(searchParams.get("q") ?? "");
+  const [statusFilter, setStatusFilter] = useState<HomeworkStatus | "all">(
+    (searchParams.get("status") as HomeworkStatus | "all") ?? "all"
+  );
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [selectedTask, setSelectedTask] = useState<HomeworkItem | null>(null);
 
-const statusConfig: Record<HomeworkStatus, StatusConfigEntry> = {
-  pending: { label: "Pending", color: "bg-yellow-100 text-yellow-700", Icon: Circle },
-  submitted: { label: "Submitted", color: "bg-blue-100 text-blue-700", Icon: CheckCircle },
-  graded: { label: "Graded", color: "bg-green-100 text-green-700", Icon: CheckCircle },
-};
+  const debouncedSearch = useDebounce(searchTerm, 250);
 
-export default function Homework() {
-  const auth = useContext(AuthContext);
-  const user = auth?.user;
-  const [searchQuery, setSearchQuery] = useState("");
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
+  useEffect(() => {
+    const nextParams: Record<string, string> = {};
+    if (searchTerm.trim()) nextParams.q = searchTerm.trim();
+    if (statusFilter !== "all") nextParams.status = statusFilter;
+    setSearchParams(nextParams, { replace: true });
+  }, [searchTerm, statusFilter, setSearchParams]);
 
-  const filteredHomework = homeworkData.filter(
-    (hw) => hw.title.toLowerCase().includes(searchQuery.toLowerCase()) || hw.subject.toLowerCase().includes(searchQuery.toLowerCase())
+  useEffect(() => {
+    setIsLoading(true);
+    const timer = setTimeout(() => setIsLoading(false), 350);
+    return () => clearTimeout(timer);
+  }, [debouncedSearch, statusFilter]);
+
+  const filteredData = useMemo(
+    () =>
+      HOMEWORK_DATA.filter((hw) => {
+        const matchesSearch =
+          hw.title.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+          hw.subject.toLowerCase().includes(debouncedSearch.toLowerCase());
+        const matchesStatus = statusFilter === "all" || hw.status === statusFilter;
+        return matchesSearch && matchesStatus;
+      }),
+    [debouncedSearch, statusFilter]
   );
 
-  const formatDate = (dateStr: string) => new Date(dateStr).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  const metrics = useMemo(
+    () => ({
+      total: HOMEWORK_DATA.length,
+      actionRequired: HOMEWORK_DATA.filter((item) => item.status === "pending" || item.status === "overdue").length,
+      graded: HOMEWORK_DATA.filter((item) => item.status === "graded").length,
+    }),
+    []
+  );
 
-  const getDaysRemaining = (dueDate: string) => {
-    const today = new Date();
-    const due = new Date(dueDate);
-    return Math.ceil((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  const openTaskModal = (task: HomeworkItem) => {
+    setSelectedTask(task);
+    setIsModalOpen(true);
   };
 
-  return (
-    <div className="p-6 space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-800">Homework</h1>
-        <p className="text-sm text-gray-500">{user?.role === "teacher" ? "Manage homework assignments" : "View your assignments"}</p>
-      </div>
-
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative w-full sm:w-80">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search homework..."
-            value={searchQuery}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-500"
-          />
-        </div>
-        {user?.role === "teacher" && (
-          <button onClick={() => setIsAddDialogOpen(true)} className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition">
-            <Plus className="h-4 w-4" /> Assign Homework
-          </button>
-        )}
-      </div>
-
-      {isAddDialogOpen && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6">
-            <h2 className="text-lg font-bold mb-1">Assign New Homework</h2>
-            <p className="text-sm text-gray-500 mb-4">Create a new homework assignment for your class.</p>
-            <form className="space-y-4">
-              <div className="flex flex-col gap-1">
-                <label className="text-sm font-medium">Title</label>
-                <input type="text" placeholder="Homework title" className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200" />
-              </div>
-              <div className="flex flex-col gap-1">
-                <label className="text-sm font-medium">Description</label>
-                <textarea rows={3} placeholder="Homework instructions..." className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200 resize-none" />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="flex flex-col gap-1">
-                  <label className="text-sm font-medium">Subject</label>
-                  <select className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200">
-                    <option value="">Select subject</option>
-                    <option value="mathematics">Mathematics</option>
-                    <option value="physics">Physics</option>
-                    <option value="chemistry">Chemistry</option>
-                    <option value="biology">Biology</option>
-                    <option value="english">English</option>
-                  </select>
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className="text-sm font-medium">Class</label>
-                  <select className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200">
-                    <option value="">Select class</option>
-                    <option value="10A">Class 10A</option>
-                    <option value="10B">Class 10B</option>
-                    <option value="9A">Class 9A</option>
-                    <option value="9B">Class 9B</option>
-                  </select>
-                </div>
-              </div>
-              <div className="flex flex-col gap-1">
-                <label className="text-sm font-medium">Due Date</label>
-                <input type="date" className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200" />
-              </div>
-              <div className="flex justify-end gap-3 pt-2">
-                <button type="button" onClick={() => setIsAddDialogOpen(false)} className="px-4 py-2 text-sm border border-gray-200 rounded-lg hover:bg-gray-50 transition">Cancel</button>
-                <button type="submit" className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">Assign</button>
-              </div>
-            </form>
+  const columns = [
+    {
+      header: "Assignment",
+      accessor: "title" as keyof HomeworkItem,
+      render: (row: HomeworkItem) => (
+        <div className="py-1">
+          <p className="text-sm font-bold text-slate-800">{row.title}</p>
+          <div className="mt-1 flex items-center gap-2">
+            <span className="rounded bg-blue-50 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-blue-600">
+              {row.subject}
+            </span>
+            <span className="rounded bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase text-slate-500">
+              {row.priority}
+            </span>
           </div>
         </div>
-      )}
+      ),
+    },
+    {
+      header: "Due Date",
+      accessor: "dueDate" as keyof HomeworkItem,
+      render: (row: HomeworkItem) => (
+        <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-500">
+          <Calendar size={13} className="text-slate-300" />
+          {row.dueDate}
+        </div>
+      ),
+    },
+    {
+      header: "Status",
+      accessor: "status" as keyof HomeworkItem,
+      render: (row: HomeworkItem) => (
+        <StatusBadge
+          status={row.status}
+          variant={
+            row.status === "pending"
+              ? "warning"
+              : row.status === "submitted"
+                ? "info"
+                : row.status === "overdue"
+                  ? "danger"
+                  : "success"
+          }
+        />
+      ),
+    },
+    {
+      header: "Action",
+      render: (row: HomeworkItem) => (
+        <Button
+          type="button"
+          variant={row.status === "pending" ? "primary" : "outline"}
+          size="sm"
+          className="h-8 rounded-lg px-4 text-[10px] font-black uppercase tracking-wider"
+          onClick={() => openTaskModal(row)}
+          title={`Open ${row.title}`}
+        >
+          {row.status === "pending" ? "Submit" : "Details"}
+        </Button>
+      ),
+    },
+  ];
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        {(["pending", "submitted", "graded"] as HomeworkStatus[]).map((status) => {
-          const colorMap: Record<HomeworkStatus, { border: string; text: string }> = {
-            pending: { border: "border-l-yellow-400", text: "text-yellow-600" },
-            submitted: { border: "border-l-blue-500", text: "text-blue-600" },
-            graded: { border: "border-l-green-500", text: "text-green-600" },
-          };
-          return (
-            <div key={status} className={`bg-white rounded-xl shadow-sm border-l-4 p-5 ${colorMap[status].border}`}>
-              <p className="text-sm text-gray-500 capitalize">{status}</p>
-              <p className={`text-2xl font-bold ${colorMap[status].text}`}>{filteredHomework.filter((h) => h.status === status).length}</p>
-            </div>
-          );
-        })}
-      </div>
+  return (
+    <div className="space-y-6">
+      <Card className="border-slate-200 bg-white">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <p className="text-[11px] font-black uppercase tracking-[0.18em] text-blue-600">Homework</p>
+            <h2 className="mt-1 text-xl font-black text-slate-900">Assignments workspace</h2>
+            <p className="mt-1 text-sm text-slate-500">Track submissions, deadlines, and graded work in one place.</p>
+          </div>
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+            <Input
+              placeholder="Search assignments..."
+              icon={Search}
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              className="w-full sm:w-72"
+              title="Search assignments"
+            />
+            <select
+              value={statusFilter}
+              onChange={(event) => setStatusFilter(event.target.value as HomeworkStatus | "all")}
+              className="h-[42px] rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-50"
+              title="Filter by status"
+              aria-label="Filter by status"
+            >
+              <option value="all">All status</option>
+              <option value="pending">Pending</option>
+              <option value="submitted">Submitted</option>
+              <option value="graded">Graded</option>
+              <option value="overdue">Overdue</option>
+            </select>
+          </div>
+        </div>
+      </Card>
 
-      <div className="grid gap-4">
-        {filteredHomework.map((homework) => {
-          const daysRemaining = getDaysRemaining(homework.dueDate);
-          const isOverdue = daysRemaining < 0;
-          const isDueSoon = daysRemaining <= 2 && daysRemaining >= 0;
-          const { label, color, Icon } = statusConfig[homework.status];
+      {isLoading ? (
+        <div className="space-y-6">
+          <StudentMetricSkeleton cards={3} />
+          <StudentTableSkeleton rows={3} />
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            <StatCard title="Total Assigned" value={metrics.total} icon={BookOpen} />
+            <StatCard title="Action Required" value={metrics.actionRequired} icon={Clock} colorClass="text-amber-600" bgClass="bg-amber-50" />
+            <StatCard title="Graded" value={metrics.graded} icon={CheckCircle2} colorClass="text-emerald-600" bgClass="bg-emerald-50" />
+          </div>
 
-          return (
-            <div key={homework.id} className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-all duration-200">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                <div className="flex-1 space-y-2">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${subjectColors[homework.subject] ?? ""}`}>{homework.subject}</span>
-                    <span className={`text-xs font-medium px-2.5 py-1 rounded-full flex items-center gap-1 ${color}`}>
-                      <Icon className="h-3 w-3" /> {label}
-                    </span>
-                    {isOverdue && homework.status === "pending" && <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-red-100 text-red-600">Overdue</span>}
-                    {isDueSoon && homework.status === "pending" && <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-yellow-100 text-yellow-600">Due Soon</span>}
+          <div className="grid grid-cols-1 gap-6 xl:grid-cols-4">
+            <Card noPadding className="xl:col-span-3 border-slate-200 overflow-hidden">
+              <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+                <h3 className="text-xs font-black uppercase tracking-[0.15em] text-slate-500">Current assignments</h3>
+                <StatusBadge status={`${filteredData.length} in view`} variant="info" />
+              </div>
+              <DataTable<HomeworkItem> columns={columns} data={filteredData} />
+              {filteredData.length === 0 ? (
+                <div className="p-4">
+                  <StudentEmptyState
+                    title="No assignments found"
+                    description="No assignments match your current filters."
+                  />
+                </div>
+              ) : null}
+            </Card>
+
+            <Card className="border-slate-200">
+              <h3 className="text-xs font-black uppercase tracking-[0.15em] text-slate-500">Submission guide</h3>
+              <div className="mt-4 space-y-4">
+                <div className="flex items-start gap-3">
+                  <div className="rounded-xl bg-blue-50 p-2 text-blue-600">
+                    <FileUp size={16} />
                   </div>
-                  <h3 className="font-semibold text-lg text-gray-800">{homework.title}</h3>
-                  <p className="text-sm text-gray-500">{homework.description}</p>
-                  <div className="flex flex-wrap gap-4 text-sm text-gray-400 pt-2">
-                    <div className="flex items-center gap-1"><BookOpen className="h-4 w-4" /><span>Class {homework.class}</span></div>
-                    <div className="flex items-center gap-1"><Calendar className="h-4 w-4" /><span>Assigned: {formatDate(homework.assignedDate)}</span></div>
-                    <div className="flex items-center gap-1"><Clock className="h-4 w-4" /><span>Due: {formatDate(homework.dueDate)}</span></div>
+                  <div>
+                    <p className="text-sm font-bold text-slate-800">Accepted format</p>
+                    <p className="text-xs text-slate-500">Upload PDF files with student ID in footer.</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  {user?.role === "student" && homework.status === "pending" && (
-                    <button className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">Submit</button>
-                  )}
-                  {user?.role === "teacher" && (
-                    <div className="relative">
-                      <button onClick={() => setOpenDropdownId(openDropdownId === homework.id ? null : homework.id)} className="p-1.5 rounded-lg hover:bg-gray-100 transition">
-                        <MoreHorizontal className="h-4 w-4 text-gray-500" />
-                      </button>
-                      {openDropdownId === homework.id && (
-                        <div className="absolute right-0 top-8 bg-white border border-gray-100 rounded-xl shadow-lg z-10 w-32">
-                          <button className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-gray-50 transition"><Edit className="h-4 w-4" /> Edit</button>
-                          <button className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-500 hover:bg-red-50 transition"><Trash2 className="h-4 w-4" /> Delete</button>
-                        </div>
-                      )}
-                    </div>
-                  )}
+                <div className="rounded-xl border border-rose-100 bg-rose-50 p-3 text-xs font-semibold text-rose-700">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle size={14} className="mt-0.5 shrink-0" />
+                    Late submissions may incur penalties based on class policy.
+                  </div>
+                </div>
+                <div className="text-xs text-slate-500">
+                  Assignment records are read-only in this workspace.
                 </div>
               </div>
+            </Card>
+          </div>
+        </>
+      )}
+
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Submit Work">
+        <div className="space-y-4">
+          {selectedTask ? (
+            <div className="rounded-xl border border-slate-100 bg-slate-50 p-4">
+              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-blue-600">{selectedTask.subject}</p>
+              <h4 className="mt-1 text-base font-black text-slate-900">{selectedTask.title}</h4>
+              <p className="mt-2 text-xs text-slate-500">{selectedTask.description}</p>
             </div>
-          );
-        })}
-      </div>
+          ) : null}
+
+          <label
+            htmlFor="homework-upload"
+            className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 p-8 text-center transition-colors hover:border-blue-300 hover:bg-blue-50/40"
+          >
+            <FileUp size={28} className="text-slate-400" />
+            <p className="mt-3 text-sm font-bold text-slate-800">Upload solution</p>
+            <p className="text-xs text-slate-500">PDF only, maximum 10MB</p>
+            <input id="homework-upload" type="file" accept=".pdf" className="hidden" />
+          </label>
+
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="ghost" onClick={() => setIsModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="button" variant="primary">
+              Confirm submission
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

@@ -1,14 +1,34 @@
-import { useState } from "react";
-import { ChevronDown, Check } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import {
+  CalendarDays,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  Coffee,
+  Download,
+  FlaskConical,
+  Lock,
+  MapPin,
+  User,
+} from "lucide-react";
+import { Button, Card, StatusBadge } from "../ui";
+import {
+  StudentEmptyState,
+  StudentMetricSkeleton,
+  StudentTableSkeleton,
+} from "./shared/StudentModuleStates";
+
+type SessionType = "lecture" | "lab" | "break";
 
 interface Session {
+  id: string;
   subject: string;
-  time: string;
   teacher?: string;
   room?: string;
-  color?: string;
-  bgColor?: string;
-  isBreak?: boolean;
+  start: string;
+  end: string;
+  type: SessionType;
 }
 
 interface TimetableDay {
@@ -16,157 +36,243 @@ interface TimetableDay {
   sessions: Session[];
 }
 
-const StudentTimetableData = () => {
-  const [selectedClass, setSelectedClass] = useState("Class 10A");
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+const DAY_ORDER = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
-  const currentDay = new Intl.DateTimeFormat("en-US", { weekday: "long" }).format(new Date());
-  const classes = ["Class 10A", "Class 10B", "Class 9A", "Class 9B", "Class 8A"];
+const TIMETABLE_DATA: TimetableDay[] = [
+  {
+    day: "Sunday",
+    sessions: [
+      { id: "sun-1", subject: "English", teacher: "Ms. Emily Davis", start: "08:00", end: "08:45", room: "Room 103", type: "lecture" },
+      { id: "sun-2", subject: "Mathematics", teacher: "Dr. Sarah Johnson", start: "08:50", end: "09:35", room: "Room 101", type: "lecture" },
+      { id: "sun-3", subject: "Short Break", start: "10:25", end: "10:45", type: "break" },
+      { id: "sun-4", subject: "Chemistry Lab", teacher: "Mr. Robert Wilson", start: "10:50", end: "11:35", room: "Lab 1", type: "lab" },
+    ],
+  },
+  {
+    day: "Monday",
+    sessions: [
+      { id: "mon-1", subject: "Physics", teacher: "Prof. Michael Chen", start: "08:00", end: "08:45", room: "Room 102", type: "lecture" },
+      { id: "mon-2", subject: "Mathematics", teacher: "Dr. Sarah Johnson", start: "08:50", end: "09:35", room: "Room 101", type: "lecture" },
+      { id: "mon-3", subject: "Lunch", start: "12:25", end: "13:10", type: "break" },
+      { id: "mon-4", subject: "History", teacher: "Mrs. Patricia Brown", start: "13:15", end: "14:00", room: "Room 104", type: "lecture" },
+    ],
+  },
+  {
+    day: "Tuesday",
+    sessions: [
+      { id: "tue-1", subject: "Biology", teacher: "Dr. Lisa Anderson", start: "09:40", end: "10:25", room: "Room 105", type: "lecture" },
+      { id: "tue-2", subject: "Geography", teacher: "Mr. James Wilson", start: "11:40", end: "12:25", room: "Room 106", type: "lecture" },
+      { id: "tue-3", subject: "Physical Education", teacher: "Coach Miller", start: "13:15", end: "14:00", room: "Sports Ground", type: "lecture" },
+    ],
+  },
+  { day: "Wednesday", sessions: [] },
+  { day: "Thursday", sessions: [] },
+  { day: "Friday", sessions: [] },
+  { day: "Saturday", sessions: [] },
+];
 
-  const timetable: TimetableDay[] = [
-    {
-      day: "Sunday",
-      sessions: [
-        { subject: "English", teacher: "Ms. Emily Davis", time: "8:00 - 8:45", room: "Room 103", color: "border-blue-500" },
-        { subject: "Mathematics", teacher: "Dr. Sarah Johnson", time: "8:50 - 9:35", room: "Room 101", color: "border-blue-500" },
-        { subject: "Biology", teacher: "Dr. Lisa Anderson", time: "9:40 - 10:25", room: "Room 105", color: "border-blue-500" },
-        { subject: "Break", time: "10:25 - 10:45", isBreak: true, color: "border-blue-500" },
-        { subject: "Chemistry Lab", teacher: "Mr. Robert Wilson", time: "10:50 - 11:35", room: "Lab 1", color: "border-emerald-500", bgColor: "bg-emerald-50" },
-        { subject: "Chemistry Lab", teacher: "Mr. Robert Wilson", time: "11:40 - 12:25", room: "Lab 1", color: "border-emerald-500", bgColor: "bg-emerald-50" },
-        { subject: "Lunch", time: "12:25 - 1:10", isBreak: true },
-        { subject: "History", teacher: "Mrs. Patricia Brown", time: "1:15 - 2:00", room: "Room 104", color: "border-blue-500" },
-      ],
-    },
-    {
-      day: "Monday",
-      sessions: [
-        { subject: "English", teacher: "Ms. Emily Davis", time: "8:00 - 8:45", room: "Room 103", color: "border-blue-500" },
-        { subject: "Mathematics", teacher: "Dr. Sarah Johnson", time: "8:50 - 9:35", room: "Room 101", color: "border-blue-500" },
-        { subject: "Biology", teacher: "Dr. Lisa Anderson", time: "9:40 - 10:25", room: "Room 105", color: "border-blue-500" },
-        { subject: "Break", time: "10:25 - 10:45", isBreak: true, color: "border-blue-500" },
-        { subject: "Chemistry Lab", teacher: "Mr. Robert Wilson", time: "10:50 - 11:35", room: "Lab 1", color: "border-emerald-500", bgColor: "bg-emerald-50" },
-        { subject: "Chemistry Lab", teacher: "Mr. Robert Wilson", time: "11:40 - 12:25", room: "Lab 1", color: "border-emerald-500", bgColor: "bg-emerald-50" },
-        { subject: "Lunch", time: "12:25 - 1:10", isBreak: true },
-        { subject: "History", teacher: "Mrs. Patricia Brown", time: "1:15 - 2:00", room: "Room 104", color: "border-blue-500" },
-      ],
-    },
-    {
-      day: "Tuesday",
-      sessions: [
-        { subject: "English", teacher: "Ms. Emily Davis", time: "8:00 - 8:45", room: "Room 103", color: "border-blue-500" },
-        { subject: "Mathematics", teacher: "Dr. Sarah Johnson", time: "8:50 - 9:35", room: "Room 101", color: "border-blue-500" },
-        { subject: "Biology", teacher: "Dr. Lisa Anderson", time: "9:40 - 10:25", room: "Room 105", color: "border-blue-500" },
-        { subject: "Break", time: "10:25 - 10:45", isBreak: true },
-        { subject: "Physics", teacher: "Prof. Michael Chen", time: "10:50 - 11:35", room: "Room 102", color: "border-blue-500" },
-        { subject: "Geography", teacher: "Mr. James Wilson", time: "11:40 - 12:25", room: "Room 106", color: "border-blue-500" },
-        { subject: "Lunch", time: "12:25 - 1:10", isBreak: true },
-        { subject: "Physical Education", teacher: "Coach Miller", time: "1:15 - 2:00", room: "Sports Ground", color: "border-blue-500" },
-      ],
-    },
-    {
-      day: "Wednesday",
-      sessions: [
-        { subject: "Chemistry", teacher: "Mr. Robert Wilson", time: "8:00 - 8:45", room: "Room 102", color: "border-blue-500" },
-        { subject: "Mathematics", teacher: "Dr. Sarah Johnson", time: "8:50 - 9:35", room: "Room 101", color: "border-blue-500" },
-        { subject: "English", teacher: "Ms. Emily Davis", time: "9:40 - 10:25", room: "Room 103", color: "border-blue-500" },
-        { subject: "Break", time: "10:25 - 10:45", isBreak: true },
-        { subject: "Biology Lab", teacher: "Dr. Lisa Anderson", time: "10:50 - 11:35", room: "Lab 2", color: "border-emerald-500", bgColor: "bg-emerald-50" },
-        { subject: "Biology Lab", teacher: "Dr. Lisa Anderson", time: "11:40 - 12:25", room: "Lab 2", color: "border-emerald-500", bgColor: "bg-emerald-50" },
-        { subject: "Lunch", time: "12:25 - 1:10", isBreak: true },
-        { subject: "Art", teacher: "Ms. Anna White", time: "1:15 - 2:00", room: "Art Room", color: "border-blue-500" },
-      ],
-    },
-    {
-      day: "Thursday",
-      sessions: [
-        { subject: "Chemistry", teacher: "Mr. Robert Wilson", time: "8:00 - 8:45", room: "Room 102", color: "border-blue-500" },
-        { subject: "Mathematics", teacher: "Dr. Sarah Johnson", time: "8:50 - 9:35", room: "Room 101", color: "border-blue-500" },
-        { subject: "English", teacher: "Ms. Emily Davis", time: "9:40 - 10:25", room: "Room 103", color: "border-blue-500" },
-        { subject: "Break", time: "10:25 - 10:45", isBreak: true },
-        { subject: "Biology Lab", teacher: "Dr. Lisa Anderson", time: "10:50 - 11:35", room: "Lab 2", color: "border-emerald-500", bgColor: "bg-emerald-50" },
-        { subject: "Biology Lab", teacher: "Dr. Lisa Anderson", time: "11:40 - 12:25", room: "Lab 2", color: "border-emerald-500", bgColor: "bg-emerald-50" },
-        { subject: "Lunch", time: "12:25 - 1:10", isBreak: true },
-        { subject: "Art", teacher: "Ms. Anna White", time: "1:15 - 2:00", room: "Art Room", color: "border-blue-500" },
-      ],
-    },
-    {
-      day: "Friday",
-      sessions: [
-        { subject: "Chemistry", teacher: "Mr. Robert Wilson", time: "8:00 - 8:45", room: "Room 102", color: "border-blue-500" },
-        { subject: "Mathematics", teacher: "Dr. Sarah Johnson", time: "8:50 - 9:35", room: "Room 101", color: "border-blue-500" },
-        { subject: "English", teacher: "Ms. Emily Davis", time: "9:40 - 10:25", room: "Room 103", color: "border-blue-500" },
-        { subject: "Break", time: "10:25 - 10:45", isBreak: true },
-        { subject: "Biology Lab", teacher: "Dr. Lisa Anderson", time: "10:50 - 11:35", room: "Lab 2", color: "border-emerald-500", bgColor: "bg-emerald-50" },
-        { subject: "Biology Lab", teacher: "Dr. Lisa Anderson", time: "11:40 - 12:25", room: "Lab 2", color: "border-emerald-500", bgColor: "bg-emerald-50" },
-        { subject: "Lunch", time: "12:25 - 1:10", isBreak: true },
-        { subject: "Art", teacher: "Ms. Anna White", time: "1:15 - 2:00", room: "Art Room", color: "border-blue-500" },
-      ],
-    },
-  ];
+function getSessionTone(type: SessionType): string {
+  if (type === "lab") return "bg-emerald-50 text-emerald-700 border-emerald-200";
+  if (type === "break") return "bg-slate-50 text-slate-600 border-slate-200";
+  return "bg-blue-50 text-blue-700 border-blue-200";
+}
+
+export default function StudentTimetableData() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const todayName = new Intl.DateTimeFormat("en-US", { weekday: "long" }).format(new Date());
+  const [weekOffset, setWeekOffset] = useState(Number(searchParams.get("week")) || 0);
+  const [activeDay, setActiveDay] = useState(searchParams.get("day") || todayName);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    if (!DAY_ORDER.includes(activeDay)) {
+      setActiveDay(todayName);
+    }
+  }, [activeDay, todayName]);
+
+  useEffect(() => {
+    setSearchParams({ day: activeDay, week: String(weekOffset) }, { replace: true });
+  }, [activeDay, weekOffset, setSearchParams]);
+
+  useEffect(() => {
+    setIsLoading(true);
+    const timer = setTimeout(() => setIsLoading(false), 400);
+    return () => clearTimeout(timer);
+  }, [activeDay, weekOffset]);
+
+  const sessions = useMemo(
+    () => TIMETABLE_DATA.find((entry) => entry.day === activeDay)?.sessions ?? [],
+    [activeDay]
+  );
+
+  const stats = useMemo(() => {
+    const lectures = sessions.filter((item) => item.type === "lecture").length;
+    const labs = sessions.filter((item) => item.type === "lab").length;
+    return {
+      total: sessions.length,
+      lectures,
+      labs,
+    };
+  }, [sessions]);
+
+  const weekLabel = weekOffset === 0 ? "Current Week" : weekOffset > 0 ? `Week +${weekOffset}` : `Week ${weekOffset}`;
+
+  const prevWeek = () => setWeekOffset((prev) => prev - 1);
+  const nextWeek = () => setWeekOffset((prev) => prev + 1);
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <StudentMetricSkeleton cards={3} />
+        <StudentTableSkeleton rows={3} />
+      </div>
+    );
+  }
 
   return (
-    <div className="w-full min-h-screen bg-slate-50/50 p-4">
-      <div className="flex items-center gap-4 mb-8">
-        <div className="relative">
-          <button
-            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="flex items-center justify-between gap-8 bg-white px-4 py-2 border border-slate-200 rounded-lg min-w-50 text-sm font-medium shadow-sm"
-          >
-            {selectedClass}
-            <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${isDropdownOpen ? "rotate-180" : ""}`} />
-          </button>
-          {isDropdownOpen && (
-            <div className="absolute top-full left-0 mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-xl z-50 overflow-hidden">
-              {classes.map((cls) => (
-                <button
-                  key={cls}
-                  onClick={() => { setSelectedClass(cls); setIsDropdownOpen(false); }}
-                  className={`w-full flex items-center justify-between px-4 py-2.5 text-sm ${cls === selectedClass ? "bg-emerald-500 text-white hover:bg-emerald-600" : "text-slate-600"}`}
-                >
-                  {cls}
-                  {cls === selectedClass && <Check className="w-3.5 h-3.5" />}
-                </button>
-              ))}
-            </div>
-          )}
+    <div className="space-y-6">
+      <Card className="border-slate-200 bg-white">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <p className="text-[11px] font-black uppercase tracking-[0.18em] text-blue-600">Timetable</p>
+            <h2 className="mt-1 text-xl font-black text-slate-900">Weekly schedule planner</h2>
+            <p className="mt-1 text-sm text-slate-500">Schedule data is read-only and managed by administration.</p>
+          </div>
+          <Button type="button" variant="outline" className="gap-2" title="Download timetable PDF">
+            <Download size={14} />
+            Download PDF
+          </Button>
         </div>
-        <span className="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">{selectedClass}</span>
+      </Card>
+
+      <Card className="border-slate-200 bg-blue-50/40 p-4 shadow-sm">
+        <div className="flex items-start gap-2 text-xs text-slate-600">
+          <Lock size={14} className="mt-0.5 shrink-0 text-blue-600" />
+          Timetable entries are informational only. Contact administration for changes.
+        </div>
+      </Card>
+
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <Card className="border-slate-200">
+          <p className="text-xs font-black uppercase tracking-wider text-slate-500">Total Sessions</p>
+          <p className="mt-3 text-2xl font-black text-slate-900">{stats.total}</p>
+        </Card>
+        <Card className="border-slate-200">
+          <p className="text-xs font-black uppercase tracking-wider text-slate-500">Lecture Slots</p>
+          <p className="mt-3 text-2xl font-black text-slate-900">{stats.lectures}</p>
+        </Card>
+        <Card className="border-slate-200">
+          <p className="text-xs font-black uppercase tracking-wider text-slate-500">Lab Slots</p>
+          <p className="mt-3 text-2xl font-black text-slate-900">{stats.labs}</p>
+        </Card>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {timetable.map((column, idx) => {
-          const isToday = column.day === currentDay;
-          return (
-            <div key={idx} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-              <div className={`p-4 border-b border-slate-100 flex justify-between items-center ${isToday ? "bg-blue-600 text-white" : "bg-white text-slate-800"}`}>
-                <h3 className="font-bold text-lg">{column.day}</h3>
-                {isToday && <span className="bg-white/20 px-3 py-0.5 rounded-full text-xs font-medium backdrop-blur-sm">Today</span>}
-              </div>
-              <div className="flex flex-col">
-                {column.sessions.map((session, sIdx) => (
-                  <div key={sIdx} className={`p-4 border-b border-slate-50 last:border-0 flex flex-col gap-1 relative ${session.bgColor ?? ""}`}>
-                    <div className="flex justify-between items-start">
-                      <div className="flex flex-col">
-                        <div className="flex items-center gap-2">
-                          <div className={`absolute left-0 top-0 bottom-0 w-1 border-l-4 ${session.isBreak ? "border-l-neutral-400" : (session.color ?? "")}`}></div>
-                          <h4 className={`font-bold text-sm ${session.isBreak ? "text-slate-500 uppercase tracking-widest" : "text-slate-800"}`}>{session.subject}</h4>
-                        </div>
-                        {!session.isBreak && <p className="text-xs text-slate-500 mt-0.5">{session.teacher}</p>}
-                      </div>
-                      <div className="text-right">
-                        <p className="text-xs font-semibold text-slate-500">{session.time}</p>
-                        {!session.isBreak && <p className="text-[10px] text-slate-400 font-medium">{session.room}</p>}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          );
-        })}
-      </div>
+      <Card className="border-slate-200">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-center gap-2">
+            <CalendarDays size={16} className="text-blue-600" />
+            <p className="text-xs font-black uppercase tracking-[0.15em] text-slate-500">{weekLabel}</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button type="button" variant="outline" size="sm" onClick={prevWeek} title="Previous week">
+              <ChevronLeft size={14} />
+            </Button>
+            <Button type="button" variant="outline" size="sm" onClick={nextWeek} title="Next week">
+              <ChevronRight size={14} />
+            </Button>
+          </div>
+        </div>
+
+        <div className="mt-4 flex flex-wrap gap-2">
+          {DAY_ORDER.map((day) => (
+            <button
+              key={day}
+              type="button"
+              onClick={() => setActiveDay(day)}
+              className={`rounded-xl px-3 py-2 text-xs font-black uppercase tracking-wider transition-all ${
+                activeDay === day
+                  ? "bg-blue-600 text-white shadow-md shadow-blue-100"
+                  : "bg-slate-100 text-slate-500 hover:bg-slate-200"
+              }`}
+              title={`View ${day} schedule`}
+            >
+              {day.slice(0, 3)}
+            </button>
+          ))}
+        </div>
+
+        <div className="mt-5 overflow-x-auto">
+          <table className="w-full min-w-[640px] text-left">
+            <thead>
+              <tr className="border-b border-slate-100 text-[11px] uppercase tracking-wider text-slate-400">
+                <th className="py-2">Time</th>
+                <th className="py-2">Subject</th>
+                <th className="py-2">Teacher</th>
+                <th className="py-2">Room</th>
+                <th className="py-2">Type</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sessions.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="p-4">
+                    <StudentEmptyState title="No sessions scheduled" description={`No classes planned for ${activeDay}.`} />
+                  </td>
+                </tr>
+              ) : (
+                sessions.map((session) => (
+                  <tr key={session.id} className="border-b border-slate-50 text-sm last:border-b-0">
+                    <td className="py-2.5">
+                      <span className="inline-flex items-center gap-1 text-slate-700">
+                        <Clock size={13} className="text-slate-400" />
+                        {session.start} - {session.end}
+                      </span>
+                    </td>
+                    <td className="py-2.5 font-semibold text-slate-800">{session.subject}</td>
+                    <td className="py-2.5 text-slate-600">
+                      {session.teacher ? (
+                        <span className="inline-flex items-center gap-1">
+                          <User size={13} className="text-slate-400" />
+                          {session.teacher}
+                        </span>
+                      ) : (
+                        "-"
+                      )}
+                    </td>
+                    <td className="py-2.5 text-slate-600">
+                      {session.room ? (
+                        <span className="inline-flex items-center gap-1">
+                          <MapPin size={13} className="text-slate-400" />
+                          {session.room}
+                        </span>
+                      ) : (
+                        "-"
+                      )}
+                    </td>
+                    <td className="py-2.5">
+                      <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-1 text-[10px] font-bold uppercase ${getSessionTone(session.type)}`}>
+                        {session.type === "lab" ? <FlaskConical size={12} /> : session.type === "break" ? <Coffee size={12} /> : null}
+                        {session.type}
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+      </Card>
+
+      <Card className="border-slate-200">
+        <h3 className="text-sm font-black uppercase tracking-[0.15em] text-slate-500">Schedule notes</h3>
+        <p className="mt-3 text-sm text-slate-600">
+          Please keep lab coat and notebook ready for all lab sessions. Arrive at least 5 minutes before slot start.
+        </p>
+        <div className="mt-4">
+          <StatusBadge status="Read only" variant="info" />
+        </div>
+      </Card>
     </div>
   );
-};
-
-export default StudentTimetableData;
+}

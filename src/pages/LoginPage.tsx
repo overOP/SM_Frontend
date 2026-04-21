@@ -1,4 +1,4 @@
-import { useContext, useState, useEffect, useRef } from "react";
+import { memo, useCallback, useContext, useState, useEffect, useRef } from "react";
 import { AuthContext } from "../context/AuthContext";
 import { Building2 } from "lucide-react";
 import { IoEyeOutline, IoEyeOffOutline } from "react-icons/io5";
@@ -6,12 +6,58 @@ import { MdMailOutline } from "react-icons/md";
 import { useNavigate } from "react-router";
 import gsap from "gsap";
 
+const ROLE_OPTIONS = ["Admin", "Teacher", "Student", "Parent"] as const;
+
+const LeftBrandPanel = memo(function LeftBrandPanel({
+  leftRef,
+}: {
+  leftRef: React.RefObject<HTMLDivElement | null>;
+}) {
+  return (
+    <div
+      ref={leftRef}
+      className="hidden lg:flex flex-1 bg-[#0057ff] text-white px-24 py-16 items-center justify-center"
+    >
+      <div className="w-full max-w-md text-left">
+        <div className="flex items-center gap-4 mb-3">
+          <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center">
+            <Building2 size={24} className="text-white" />
+          </div>
+          <h1 className="text-4xl font-bold">Sikshyanetra</h1>
+        </div>
+        <p className="text-lg opacity-90 mb-16">School Management System</p>
+        <h2 className="text-5xl font-extrabold leading-tight tracking-tight mb-7">
+          Streamline Your <br />
+          Educational Journey
+        </h2>
+        <p className="text-lg leading-relaxed opacity-95 mb-11">
+          A comprehensive platform designed to manage students, teachers,
+          attendance, and academic activities with ease.
+        </p>
+        <ul className="space-y-3 text-lg">
+          {[
+            "Role-based access control",
+            "Real-time attendance tracking",
+            "Event management",
+            "Performance analytics",
+          ].map((item, index) => (
+            <li key={index} className="flex items-start gap-3">
+              <span className="text-3xl text-blue-500 leading-none">•</span>
+              <span>{item}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+});
+
 export default function LoginPage() {
   const auth = useContext(AuthContext);
   const navigate = useNavigate();
 
   // Updated to .com to match your AuthContext USERS mock data
-  const [email, setEmail] = useState("admin@school.com");
+  const [email, setEmail] = useState("admin@sikshyanetra.com");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [activeRole, setActiveRole] = useState("Admin");
@@ -20,7 +66,7 @@ export default function LoginPage() {
   const leftRef = useRef<HTMLDivElement>(null);
   const rightRef = useRef<HTMLDivElement>(null);
 
-  const handleLogin = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleLogin = useCallback((e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     // Call the context login method
@@ -32,13 +78,13 @@ export default function LoginPage() {
     } else {
       alert(result?.message);
     }
-  };
+  }, [auth, email, password, navigate]);
 
   useEffect(() => {
     const tl = gsap.timeline();
     tl.from(leftRef.current, {
       x: -100,
-      opacity: 0,
+      opacity: 1,
       duration: 0.8,
       ease: "power3.out",
     });
@@ -46,52 +92,21 @@ export default function LoginPage() {
       rightRef.current,
       {
         x: 100,
-        opacity: 0,
+        opacity: 1,
         duration: 0.8,
         ease: "power3.out",
       },
       "-=0.5"
     );
+    return () => {
+      tl.kill();
+    };
   }, []);
 
   return (
     <div className="min-h-screen font-sans flex">
       {/* LEFT SECTION */}
-      <div
-        ref={leftRef}
-        className="hidden lg:flex flex-1 bg-[#0057ff] text-white px-24 py-16 items-center justify-center"
-      >
-        <div className="w-full max-w-md text-left">
-          <div className="flex items-center gap-4 mb-3">
-            <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center">
-              <Building2 size={24} className="text-white" />
-            </div>
-            <h1 className="text-4xl font-bold">EduManage</h1>
-          </div>
-          <p className="text-lg opacity-90 mb-16">School Management System</p>
-          <h2 className="text-5xl font-extrabold leading-tight tracking-tight mb-7">
-            Streamline Your <br />
-            Educational Journey
-          </h2>
-          <p className="text-lg leading-relaxed opacity-95 mb-11">
-            A comprehensive platform designed to manage students, teachers,
-            attendance, and academic activities with ease.
-          </p>
-          <ul className="space-y-3 text-lg">
-            {[
-              "Role-based access control",
-              "Real-time attendance tracking",
-              "Event management",
-              "Performance analytics",
-            ].map((item, index) => (
-              <li key={index} className="flex items-start gap-3">
-                <span className="text-3xl text-blue-500 leading-none">•</span>
-                <span>{item}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
+      <LeftBrandPanel leftRef={leftRef} />
 
       {/* RIGHT SECTION */}
       <div
@@ -105,7 +120,7 @@ export default function LoginPage() {
           </p>
 
           <div className="flex gap-3 mb-6 flex-wrap justify-center">
-            {["Admin", "Teacher", "Student", "Parent"].map((role) => (
+            {ROLE_OPTIONS.map((role) => (
               <button
                 key={role}
                 type="button"
@@ -138,7 +153,7 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
                   placeholder="admin@school.com"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 pr-10 text-sm focus:outline-none focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-200 transition"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 pr-10 text-sm focus:outline-none focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-200 transition-colors duration-200"
                 />
                 <MdMailOutline className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg" />
               </div>
@@ -152,7 +167,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
                   placeholder="Enter your password"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 pr-10 text-sm focus:outline-none focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-200 transition"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 pr-10 text-sm focus:outline-none focus:border-blue-600 focus:bg-white focus:ring-2 focus:ring-blue-200 transition-colors duration-200"
                 />
                 <button
                   type="button"
@@ -176,14 +191,14 @@ export default function LoginPage() {
 
             <button
               type="submit"
-              className="mt-3 py-4 rounded-xl text-white font-semibold bg-gradient-to-r from-blue-600 to-blue-700 shadow-lg hover:-translate-y-1 hover:shadow-xl transition-all duration-300"
+              className="mt-3 py-4 rounded-xl text-white font-semibold bg-gradient-to-r from-blue-600 to-blue-700 shadow-lg hover:-translate-y-1 hover:shadow-xl transition-transform transition-shadow duration-300"
             >
               Login
             </button>
           </form>
 
           <p className="text-center text-xs text-slate-400 mt-6">
-            Demo: Use admin@school.com / admin123
+            Demo: Use admin@sikshyanetra.com / admin123
           </p>
         </div>
       </div>
