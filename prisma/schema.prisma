@@ -1,0 +1,75 @@
+// Prisma schema — mirror for PostgreSQL backend. Run: npx prisma migrate dev
+// Frontend consumes the same shapes via src/types/results.ts
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum ResultPublishStatus {
+  Draft
+  Published
+  UnderReview
+}
+
+model Student {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  rollNo    String
+  className String
+  results   Result[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Subject {
+  id         String   @id @default(cuid())
+  code       String   @unique
+  name       String
+  category   String // e.g. "Core", "Elective", "Lab"
+  credits    Int      @default(4)
+  results    Result[]
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Semester {
+  id        String   @id @default(cuid())
+  label     String // e.g. "Fall 2024"
+  order     Int      @unique // monotonic for sorting
+  results   Result[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/// Academic result row: links Student + Subject + Semester with scored components.
+model Result {
+  id             String               @id @default(cuid())
+  studentId      String
+  student        Student              @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  subjectId      String
+  subject        Subject              @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  semesterId     String
+  semester       Semester             @relation(fields: [semesterId], references: [id], onDelete: Cascade)
+  internalMarks  Float                @default(0)
+  practicalMarks Float                @default(0)
+  theoryMarks    Float                @default(0)
+  totalMarks     Float
+  maxTheory      Float                @default(100)
+  maxPractical   Float                @default(50)
+  maxInternal    Float                @default(50)
+  gradeLetter    String?
+  status         ResultPublishStatus  @default(Draft)
+  facultyId      String? // assigned teacher for RBAC row-level checks
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+
+  @@unique([studentId, subjectId, semesterId])
+  @@index([studentId])
+  @@index([semesterId])
+  @@index([facultyId])
+}

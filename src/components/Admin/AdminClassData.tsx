@@ -1,14 +1,15 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { 
   MoreHorizontal, 
   Users, 
   BookOpen, 
-  Search, 
+  Search,
   Plus, 
-  Filter, 
   DoorOpen, 
   UserCircle, 
-  Layers 
+  Layers,
+  School,
+  AlertTriangle,
 } from "lucide-react";
 
 // Importing UI Library
@@ -21,6 +22,8 @@ import {
   
 } from "../ui";
 import { Modal } from "../ui/Modal";
+import { AdminKpiRow } from "./shared/AdminKpiRow";
+import { AdminSectionToolbar } from "./shared/AdminSectionToolbar";
 
 interface ClassEntry {
   id: number;
@@ -44,15 +47,10 @@ const initialClassData: ClassEntry[] = [
 ];
 
 const AdminClassData: React.FC = () => {
-  // UI Logic States
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedGrade, setSelectedGrade] = useState("All Grades");
   const [isModalOpen, setIsModalOpen] = useState(false);
-
-  // Data State
   const [classes, setClasses] = useState<ClassEntry[]>(initialClassData);
-
-  // Form State
   const [formData, setFormData] = useState({
     name: "",
     grade: "Grade 10",
@@ -67,7 +65,11 @@ const AdminClassData: React.FC = () => {
   const handleSaveClass = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Create new entry logic
+    const parsedSubjects = formData.subjects
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+
     const newClass: ClassEntry = {
       id: Date.now(),
       name: formData.name,
@@ -76,8 +78,8 @@ const AdminClassData: React.FC = () => {
       teacher: formData.teacher,
       initials: formData.teacher.split(' ').map(n => n[0]).join('').toUpperCase(),
       students: 0,
-      subjectsCount: formData.subjects.split(',').length,
-      subjects: formData.subjects.split(',').map(s => s.trim()),
+      subjectsCount: parsedSubjects.length,
+      subjects: parsedSubjects,
       accentColor: formData.grade === "Grade 10" ? "border-t-blue-500" : "border-t-purple-500"
     };
 
@@ -86,23 +88,79 @@ const AdminClassData: React.FC = () => {
     setFormData({ name: "", grade: "Grade 10", room: "", teacher: "", subjects: "" });
   };
 
-  const filteredClasses = classes.filter(cls => {
-    const matchesSearch = cls.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          cls.teacher.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesGrade = selectedGrade === "All Grades" || cls.grade === selectedGrade;
-    return matchesSearch && matchesGrade;
-  });
+  const filteredClasses = useMemo(
+    () =>
+      classes.filter((cls) => {
+        const q = searchTerm.trim().toLowerCase();
+        const matchesSearch =
+          q.length === 0 ||
+          cls.name.toLowerCase().includes(q) ||
+          cls.teacher.toLowerCase().includes(q) ||
+          cls.room.toLowerCase().includes(q);
+        const matchesGrade = selectedGrade === "All Grades" || cls.grade === selectedGrade;
+        return matchesSearch && matchesGrade;
+      }),
+    [classes, searchTerm, selectedGrade]
+  );
+
+  const stats = useMemo(() => {
+    const totalStudents = classes.reduce((acc, c) => acc + c.students, 0);
+    const avgClassSize = classes.length ? Math.round(totalStudents / classes.length) : 0;
+    const overloaded = classes.filter((c) => c.students > 38).length;
+    const totalSubjects = classes.reduce((acc, c) => acc + c.subjectsCount, 0);
+    return { totalStudents, avgClassSize, overloaded, totalSubjects };
+  }, [classes]);
+
+  const kpiItems = [
+    {
+      title: "Total Sections",
+      value: classes.length,
+      icon: School,
+      colorClass: "text-blue-600",
+      bgClass: "bg-blue-50",
+    },
+    {
+      title: "Students Allocated",
+      value: stats.totalStudents,
+      icon: Users,
+      colorClass: "text-emerald-600",
+      bgClass: "bg-emerald-50",
+    },
+    {
+      title: "Avg Class Size",
+      value: stats.avgClassSize,
+      icon: Layers,
+      colorClass: "text-violet-600",
+      bgClass: "bg-violet-50",
+    },
+    {
+      title: "Overloaded (>38)",
+      value: stats.overloaded,
+      icon: AlertTriangle,
+      colorClass: "text-amber-600",
+      bgClass: "bg-amber-50",
+    },
+  ];
 
   return (
     <div className="min-h-screen bg-slate-50 p-6 md:p-8 font-sans text-slate-700">
+      <AdminKpiRow items={kpiItems} />
       
-      {/* Header Section */}
-      <div className="flex flex-col gap-6 mb-8">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div>
-            <h1 className="text-2xl font-black text-slate-800 tracking-tight">Class Management</h1>
-            <p className="text-sm text-slate-400 font-medium">Monitoring {filteredClasses.length} active sections</p>
-          </div>
+      <AdminSectionToolbar
+        title="Class Management"
+        description={`Monitoring ${filteredClasses.length} sections · ${stats.totalSubjects} subject allocations`}
+        searchValue={searchTerm}
+        onSearchChange={setSearchTerm}
+        searchPlaceholder="Search by class, teacher, or room..."
+        filters={
+          <Select 
+            options={grades} 
+            value={selectedGrade}
+            onChange={(e) => setSelectedGrade(e.target.value)}
+            className="w-full md:w-48"
+          />
+        }
+        actions={
           <Button 
             variant="primary" 
             className="gap-2 shadow-blue-200 shadow-lg"
@@ -110,35 +168,8 @@ const AdminClassData: React.FC = () => {
           >
             <Plus className="w-4 h-4" /> Add New Class
           </Button>
-        </div>
-
-        {/* Filter Bar */}
-        <Card className="py-4 px-6 border-none shadow-sm bg-white/50 backdrop-blur-md">
-          <div className="flex flex-col md:flex-row items-center gap-4">
-            <div className="w-full md:flex-1">
-              <Input 
-                placeholder="Search by class name or teacher..." 
-                icon={Search}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-            
-            <div className="flex items-center gap-3 w-full md:w-auto">
-              <div className="flex items-center gap-2 text-slate-400 mr-2">
-                <Filter className="w-4 h-4" />
-                <span className="text-xs font-bold uppercase tracking-wider">Grade:</span>
-              </div>
-              <Select 
-                options={grades} 
-                value={selectedGrade}
-                onChange={(e) => setSelectedGrade(e.target.value)}
-                className="w-full md:w-48"
-              />
-            </div>
-          </div>
-        </Card>
-      </div>
+        }
+      />
 
       {/* Grid */}
       {filteredClasses.length > 0 ? (

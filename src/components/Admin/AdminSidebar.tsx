@@ -1,29 +1,30 @@
-import { useContext } from "react";
+import { useContext, useMemo } from "react";
 import { AuthContext } from "../../context/AuthContext";
-import type { LucideIcon } from "lucide-react";
 
 import { 
   ChevronLeft, 
   ChevronRight, 
   Building2, 
   LogOut, 
-  X,
-  Settings
+  X
 } from "lucide-react";
 import { useNavigate } from "react-router";
 
-// Importing your Reusable UI Components
 import { Button } from "../ui/Button";
+import type { AdminSidebarGroup } from "../../data/dashboardData";
 
-interface SidebarItem {
-  icon: LucideIcon;
-  label: string;
+function initialsFromName(name?: string): string {
+  if (!name) return "AD";
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "AD";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
 }
 
 interface AdminSidebarProps {
   collapsed: boolean;
   setCollapsed: (value: boolean) => void;
-  sidebarItems: SidebarItem[];
+  sidebarGroups: AdminSidebarGroup[];
   mobileOpen: boolean;
   setMobileOpen: (value: boolean) => void;
   activeItem: string;
@@ -33,7 +34,7 @@ interface AdminSidebarProps {
 const AdminSidebar = ({
   collapsed,
   setCollapsed,
-  sidebarItems,
+  sidebarGroups,
   mobileOpen,
   setMobileOpen,
   activeItem,
@@ -41,6 +42,8 @@ const AdminSidebar = ({
 }: AdminSidebarProps) => {
   const auth = useContext(AuthContext);
   const navigate = useNavigate();
+  const displayName = auth?.user?.name ?? "Admin User";
+  const initials = useMemo(() => initialsFromName(displayName), [displayName]);
 
   const handleLogout = () => {
     auth?.logout();
@@ -49,7 +52,6 @@ const AdminSidebar = ({
 
   return (
     <>
-      {/* Mobile Overlay */}
       {mobileOpen && (
         <div
           className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40 lg:hidden transition-opacity"
@@ -68,7 +70,6 @@ const AdminSidebar = ({
           transition-all duration-300 ease-in-out
         `}
       >
-        {/* Brand Header */}
         <div className={`flex items-center gap-3 p-5 border-b border-slate-50 ${collapsed ? 'justify-center' : ''}`}>
           <div className="min-w-[40px] w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-100 shrink-0">
             <Building2 className="w-5 h-5 text-white" />
@@ -93,42 +94,48 @@ const AdminSidebar = ({
           )}
         </div>
 
-        {/* Navigation Items */}
-        <nav className="flex-1 p-3 space-y-1 overflow-y-auto no-scrollbar">
-          {sidebarItems.map((item) => {
-            const isActive = activeItem === item.label;
-            return (
-              <button
-                key={item.label}
-                title={collapsed ? item.label : ""}
-                onClick={() => {
-                  setActiveItem(item.label);
-                  setMobileOpen(false);
-                }}
-                className={`
-                  w-full flex items-center gap-3 rounded-xl text-sm font-bold transition-all duration-200 group relative
-                  ${collapsed ? "justify-center px-0 py-3" : "px-4 py-3"}
-                  ${isActive
-                    ? "bg-blue-600 text-white shadow-md shadow-blue-100"
-                    : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"
-                  }
-                `}
-              >
-                <item.icon className={`shrink-0 ${collapsed ? "w-6 h-6" : "w-5 h-5"} ${isActive ? "text-white" : "group-hover:text-blue-600"}`} />
-                {!collapsed && (
-                  <span className="truncate animate-in fade-in slide-in-from-left-2 duration-300">
-                    {item.label}
-                  </span>
-                )}
-                {/* Visual indicator for active item when collapsed */}
-                {isActive && collapsed && (
-                   <div className="absolute left-0 w-1 h-6 bg-white rounded-r-full" />
-                )}
-              </button>
-            );
-          })}
+        <nav className="flex-1 space-y-4 overflow-y-auto p-3 no-scrollbar">
+          {sidebarGroups.map((group) => (
+            <div key={group.title} className="space-y-1">
+              {!collapsed && (
+                <p className="px-3 pb-1 pt-1 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                  {group.title}
+                </p>
+              )}
+              {group.items.map((item) => {
+                const isActive = activeItem === item.label;
+                return (
+                  <button
+                    key={item.label}
+                    title={item.description ?? item.label}
+                    onClick={() => {
+                      setActiveItem(item.label);
+                      setMobileOpen(false);
+                    }}
+                    className={`
+                      w-full flex items-center gap-3 rounded-xl text-sm font-bold transition-all duration-200 group relative
+                      ${collapsed ? "justify-center px-0 py-3" : "px-4 py-3"}
+                      ${isActive
+                        ? "bg-blue-600 text-white shadow-md shadow-blue-100"
+                        : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"
+                      }
+                    `}
+                  >
+                    <item.icon className={`shrink-0 ${collapsed ? "w-6 h-6" : "w-5 h-5"} ${isActive ? "text-white" : "group-hover:text-blue-600"}`} />
+                    {!collapsed && (
+                      <span className="truncate animate-in fade-in slide-in-from-left-2 duration-300">
+                        {item.label}
+                      </span>
+                    )}
+                    {isActive && collapsed && (
+                      <div className="absolute left-0 w-1 h-6 bg-white rounded-r-full" />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          ))}
 
-          {/* Expand Toggle (Visible only when collapsed) */}
           {collapsed && (
             <Button
               variant="ghost"
@@ -140,37 +147,21 @@ const AdminSidebar = ({
           )}
         </nav>
 
-        {/* Footer / User Profile */}
         <div className="p-4 border-t border-slate-50 bg-slate-50/30">
           <div className={`flex items-center gap-3 ${collapsed ? 'justify-center' : ''}`}>
             <div className="w-9 h-9 rounded-xl bg-blue-100 flex items-center justify-center border border-blue-200 shrink-0">
-              <span className="text-xs font-black text-blue-600">SJ</span>
+              <span className="text-xs font-black text-blue-600">{initials}</span>
             </div>
 
             {!collapsed && (
               <div className="flex-1 min-w-0 animate-in fade-in slide-in-from-left-2 duration-300">
-                <p className="text-sm font-bold text-slate-800 truncate leading-none">Dr. Sarah Johnson</p>
+                <p className="text-sm font-bold text-slate-800 truncate leading-none">{displayName}</p>
                 <p className="text-[10px] font-bold text-slate-400 uppercase mt-1">Super Admin</p>
               </div>
             )}
           </div>
 
-          <div className="mt-4 pt-4 border-t border-slate-100 flex flex-col gap-1">
-            <Button 
-            onClick={() => {setActiveItem("Settings")
-              if(mobileOpen) 
-                setMobileOpen(false); 
-            }
-              
-              
-            }
-              variant="ghost" 
-              className={`justify-start gap-3 font-bold text-slate-500 hover:text-slate-800 ${collapsed ? 'px-0 justify-center' : 'px-2'}`}
-            >
-              <Settings size={18} />
-              {!collapsed && <span>Settings</span>}
-            </Button>
-            
+          <div className="mt-4 pt-4 border-t border-slate-100">
             <Button 
               variant="ghost"
               onClick={handleLogout} 
@@ -183,7 +174,6 @@ const AdminSidebar = ({
         </div>
       </aside>
 
-      {/* Mobile Toggle Button (Close) */}
 {mobileOpen && (
   <div className="fixed top-4 right-4 z-[60] lg:hidden animate-in fade-in zoom-in duration-200">
     <Button

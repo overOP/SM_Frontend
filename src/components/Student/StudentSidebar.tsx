@@ -51,7 +51,7 @@ const StudentSidebar: React.FC<StudentSidebarProps> = ({
     const name = auth?.user?.name || "Student";
     return name
       .split(" ")
-      .map((n) => n[0])
+      .map((n: string) => n[0])
       .join("")
       .toUpperCase()
       .slice(0, 2);
@@ -97,7 +97,13 @@ const StudentSidebar: React.FC<StudentSidebarProps> = ({
             {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
           </button>
 
-          <button onClick={() => setMobileOpen(false)} className="lg:hidden ml-auto text-slate-400 p-2">
+          <button
+            type="button"
+            onClick={() => setMobileOpen(false)}
+            aria-label="Close sidebar"
+            title="Close sidebar"
+            className="lg:hidden ml-auto text-slate-400 p-2"
+          >
             <X size={24} />
           </button>
         </div>

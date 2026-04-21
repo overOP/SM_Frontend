@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react';
 
-interface Column<T> {
+export interface Column<T> {
   header: string;
-  accessor: keyof T;
+  accessor?: keyof T;
   render?: (row: T, index: number) => ReactNode;
 }
 
@@ -30,7 +30,11 @@ export function DataTable<T>({ columns, data, emptyMessage = "No results found" 
             <tr key={rowIndex} className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
               {columns.map((col, colIndex) => (
                 <td key={colIndex} className="py-4 px-4 text-sm text-slate-600 font-medium">
-                  {col.render ? col.render(row, rowIndex) : (row[col.accessor] as ReactNode)}
+                  {col.render
+                    ? col.render(row, rowIndex)
+                    : col.accessor !== undefined
+                      ? (row[col.accessor] as ReactNode)
+                      : null}
                 </td>
               ))}
             </tr>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { 
   Calendar as CalendarIcon, 
   ChevronLeft, 
@@ -113,7 +113,7 @@ const ChildAttendance = () => {
           <h1 className="text-3xl font-black text-slate-900 tracking-tight">Attendance & Leave</h1>
           <p className="text-slate-500 text-sm font-medium">Manage records and absence requests in one place.</p>
         </div>
-        <Button onClick={() => setIsLeaveModalOpen(true)} shadow className="px-8">
+        <Button onClick={() => setIsLeaveModalOpen(true)} className="px-8 shadow-lg shadow-slate-200/60">
           <Plus size={18} className="mr-2" /> Apply for Leave
         </Button>
       </div>

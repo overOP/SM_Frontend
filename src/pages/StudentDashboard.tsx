@@ -20,6 +20,7 @@ import StudentEventData from "../components/Student/StudentEventData";
 import StudentTimetableData from "../components/Student/StudentTimetableData";
 import StudentAnnouncementData from "../components/Student/StudentAnnouncementData";
 import Homework from "../components/Student/StudentHomework";
+import StudentResults from "../components/Student/StudentResults";
 
 // Data
 import {
@@ -255,6 +256,7 @@ const StudentDashboard = () => {
             case "Events": return <StudentEventData />;
             case "Attendance": return <StudentAttendanceData />;
             case "Homework": return <Homework />;
+            case "Results": return <StudentResults />;
             default: return <DefaultDashboardView />;
           }
         })()}

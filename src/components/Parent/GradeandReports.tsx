@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { 
    
   TrendingUp, 
@@ -104,7 +104,7 @@ const GradeAndReports = () => {
           <h1 className="text-3xl font-black text-slate-900 tracking-tight">Academic Performance</h1>
           <p className="text-slate-500 text-sm font-medium">Detailed breakdown of examination results and progress.</p>
         </div>
-        <Button shadow>
+        <Button className="shadow-lg shadow-slate-200/60">
           <FileDown size={18} className="mr-2" /> Export Report Card
         </Button>
       </div>

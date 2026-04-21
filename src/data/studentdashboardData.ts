@@ -10,6 +10,7 @@ import {
   Megaphone,
   UserPlus,
   CheckCircle2,
+  BarChart3,
 } from "lucide-react";
 
 interface SidebarItem {
@@ -45,6 +46,7 @@ export const sidebarItems: SidebarItem[] = [
   { icon: ClipboardCheck, label: "Attendance" },
   { icon: Clock, label: "Timetable" },
   { icon: BookOpen, label: "Homework" },
+  { icon: BarChart3, label: "Results" },
   { icon: CalendarDays, label: "Events" },
   { icon: Megaphone, label: "Announcements" },
 ];

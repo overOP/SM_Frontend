@@ -94,7 +94,7 @@ const StudentAnnouncements: React.FC = () => {
                {/* Content logic using specific types */}
                <div className="space-y-4">
                   <div className="flex justify-between">
-                     <StatusBadge status={item.priority} variant="error" />
+                     <StatusBadge status={item.priority} variant="danger" />
                      <StatusBadge status={item.audience} variant="info" />
                   </div>
                   <h3 className="text-xl font-bold text-slate-800">{item.title}</h3>

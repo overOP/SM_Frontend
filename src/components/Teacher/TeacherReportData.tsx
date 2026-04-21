@@ -1,12 +1,13 @@
-import { useState, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import {
-  ChevronDown,
   Download,
-  Check,
   Users,
   ClipboardCheck,
   TrendingUp,
   GraduationCap,
+  AlertTriangle,
+  CalendarClock,
+  FileCheck2,
 } from "lucide-react";
 import {
   BarChart,
@@ -18,236 +19,386 @@ import {
   ResponsiveContainer,
   LineChart,
   Line,
+  Legend,
   PieChart,
   Pie,
   Cell,
 } from "recharts";
 
-interface StatCardProps {
+interface KpiCardProps {
   label: string;
   value: string;
   change: string;
+  helper: string;
   icon: ReactNode;
 }
 
 interface ChartContainerProps {
   title: string;
+  subtitle?: string;
   children: ReactNode;
 }
 
-interface SubjectDatum {
+interface SubjectPerformanceDatum {
   name: string;
   score: number;
   full: number;
 }
 
-interface GradeDatum {
+interface GradeMixDatum {
   name: string;
   value: number;
   color: string;
 }
 
-interface AttendanceDatum {
+interface AttendanceByClassDatum {
+  className: string;
+  value: number;
+}
+
+interface AttendanceTrendDatum {
+  slot: string;
+  value: number;
+}
+
+interface RiskStudent {
   name: string;
-  value: number;
+  roll: string;
+  attendance: number;
+  score: number;
 }
 
-interface MonthlyDatum {
-  month: string;
-  value: number;
+interface ReportSnapshot {
+  attendanceByClass: AttendanceByClassDatum[];
+  attendanceTrend: AttendanceTrendDatum[];
+  subjectPerformance: SubjectPerformanceDatum[];
+  gradeMix: GradeMixDatum[];
+  riskStudents: RiskStudent[];
+  submissionsPending: number;
+  passRate: number;
+  avgScore: number;
+  avgAttendance: number;
+  totalStudents: number;
 }
 
-const StatCard = ({ label, value, change, icon }: StatCardProps) => (
-  <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex justify-between">
+const GRADE_COLOR_CLASS: Record<string, string> = {
+  A: "bg-green-600",
+  B: "bg-blue-600",
+  C: "bg-yellow-500",
+  "D/F": "bg-red-600",
+};
+
+const REPORT_BY_CLASS: Record<string, ReportSnapshot> = {
+  all: {
+    attendanceByClass: [
+      { className: "CSE-2024-A", value: 94 },
+      { className: "CSE-2024-B", value: 91 },
+      { className: "ECE-2023-A", value: 88 },
+      { className: "ME-2022-A", value: 86 },
+    ],
+    attendanceTrend: [
+      { slot: "W1", value: 89 },
+      { slot: "W2", value: 90 },
+      { slot: "W3", value: 92 },
+      { slot: "W4", value: 91 },
+    ],
+    subjectPerformance: [
+      { name: "Data Structures", score: 79, full: 100 },
+      { name: "DBMS", score: 83, full: 100 },
+      { name: "Discrete Math", score: 76, full: 100 },
+      { name: "OOP", score: 81, full: 100 },
+    ],
+    gradeMix: [
+      { name: "A", value: 24, color: "#16a34a" },
+      { name: "B", value: 39, color: "#2563eb" },
+      { name: "C", value: 25, color: "#eab308" },
+      { name: "D/F", value: 12, color: "#dc2626" },
+    ],
+    riskStudents: [
+      { name: "Rahul Verma", roll: "CS24B07", attendance: 71, score: 42 },
+      { name: "Aisha Khan", roll: "EC23A11", attendance: 76, score: 49 },
+      { name: "Pranav Iyer", roll: "ME22A03", attendance: 74, score: 51 },
+    ],
+    submissionsPending: 8,
+    passRate: 89,
+    avgScore: 79,
+    avgAttendance: 90,
+    totalStudents: 164,
+  },
+  cse24a: {
+    attendanceByClass: [{ className: "CSE-2024-A", value: 94 }],
+    attendanceTrend: [
+      { slot: "W1", value: 92 },
+      { slot: "W2", value: 93 },
+      { slot: "W3", value: 95 },
+      { slot: "W4", value: 94 },
+    ],
+    subjectPerformance: [
+      { name: "Data Structures", score: 84, full: 100 },
+      { name: "DBMS", score: 87, full: 100 },
+      { name: "Discrete Math", score: 82, full: 100 },
+      { name: "OOP", score: 85, full: 100 },
+    ],
+    gradeMix: [
+      { name: "A", value: 36, color: "#16a34a" },
+      { name: "B", value: 44, color: "#2563eb" },
+      { name: "C", value: 16, color: "#eab308" },
+      { name: "D/F", value: 4, color: "#dc2626" },
+    ],
+    riskStudents: [
+      { name: "Sahil Raj", roll: "CS24A12", attendance: 78, score: 54 },
+      { name: "Nitika Jain", roll: "CS24A04", attendance: 75, score: 57 },
+    ],
+    submissionsPending: 2,
+    passRate: 96,
+    avgScore: 84,
+    avgAttendance: 94,
+    totalStudents: 42,
+  },
+  cse24b: {
+    attendanceByClass: [{ className: "CSE-2024-B", value: 91 }],
+    attendanceTrend: [
+      { slot: "W1", value: 88 },
+      { slot: "W2", value: 90 },
+      { slot: "W3", value: 92 },
+      { slot: "W4", value: 91 },
+    ],
+    subjectPerformance: [
+      { name: "Data Structures", score: 76, full: 100 },
+      { name: "DBMS", score: 82, full: 100 },
+      { name: "Discrete Math", score: 73, full: 100 },
+      { name: "OOP", score: 78, full: 100 },
+    ],
+    gradeMix: [
+      { name: "A", value: 18, color: "#16a34a" },
+      { name: "B", value: 42, color: "#2563eb" },
+      { name: "C", value: 29, color: "#eab308" },
+      { name: "D/F", value: 11, color: "#dc2626" },
+    ],
+    riskStudents: [
+      { name: "Rahul Verma", roll: "CS24B07", attendance: 71, score: 42 },
+      { name: "Maya Menon", roll: "CS24B14", attendance: 77, score: 50 },
+      { name: "Ankit Nair", roll: "CS24B02", attendance: 73, score: 47 },
+    ],
+    submissionsPending: 3,
+    passRate: 87,
+    avgScore: 77,
+    avgAttendance: 91,
+    totalStudents: 39,
+  },
+};
+
+const KPI_CARD = ({
+  label,
+  value,
+  change,
+  helper,
+  icon,
+}: KpiCardProps) => (
+  <div className="flex justify-between rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
     <div>
-      <p className="text-slate-500 text-sm">{label}</p>
+      <p className="text-sm text-slate-500">{label}</p>
       <h3 className="text-2xl font-bold text-slate-800">{value}</h3>
-      <p className="text-emerald-500 text-xs font-bold">{change}</p>
+      <p className="text-xs font-semibold text-emerald-600">{change}</p>
+      <p className="mt-1 text-[11px] text-slate-400">{helper}</p>
     </div>
-    <div className="p-3 bg-slate-50 rounded-xl text-slate-400">{icon}</div>
+    <div className="rounded-xl bg-slate-50 p-3 text-slate-400">{icon}</div>
   </div>
 );
 
-const ChartContainer = ({ title, children }: ChartContainerProps) => (
-  <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-    <h2 className="text-lg font-bold text-slate-800 mb-6">{title}</h2>
+const ChartContainer = ({ title, subtitle, children }: ChartContainerProps) => (
+  <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+    <h2 className="text-lg font-bold text-slate-800">{title}</h2>
+    {subtitle ? <p className="mt-1 text-xs text-slate-500">{subtitle}</p> : null}
     <div className="h-64 w-full">{children}</div>
   </div>
 );
 
 const TeacherReportData = () => {
-  const [isTimeDropdownOpen, setIsTimeDropdownOpen] = useState(false);
-  const [selectedTime, setSelectedTime] = useState("This Month");
+  const [selectedClass, setSelectedClass] = useState<"all" | "cse24a" | "cse24b">(
+    "all"
+  );
+  const [selectedRange, setSelectedRange] = useState<"week" | "month" | "term">(
+    "month"
+  );
 
-  const [isClassDropdownOpen, setIsClassDropdownOpen] = useState(false);
-  const [selectedClass, setSelectedClass] = useState("All Classes");
+  const view = useMemo(
+    () => REPORT_BY_CLASS[selectedClass] ?? REPORT_BY_CLASS.all,
+    [selectedClass]
+  );
 
-  const timeOptions = ["This Week", "This Month", "This Quarter", "This Year"];
-  const classOptions = ["Class10A", "Class 10B", "Class 9A", "Class 9B", "Class 8A", "Class 8B"];
+  const trendAdjusted = useMemo(() => {
+    const multiplier =
+      selectedRange === "week" ? 0.98 : selectedRange === "term" ? 1.02 : 1;
+    return view.attendanceTrend.map((d) => ({
+      ...d,
+      value: Math.max(0, Math.min(100, Number((d.value * multiplier).toFixed(1)))),
+    }));
+  }, [selectedRange, view.attendanceTrend]);
 
-  const subjectData: SubjectDatum[] = [
-    { name: "Math", score: 78, full: 100 },
-    { name: "Physics", score: 85, full: 100 },
-    { name: "Chemistry", score: 75, full: 100 },
-    { name: "English", score: 82, full: 100 },
-    { name: "Biology", score: 79, full: 100 },
-  ];
-
-  const gradeData: GradeDatum[] = [
-    { name: "A+", value: 15, color: "#166534" },
-    { name: "A", value: 25, color: "#14b8a6" },
-    { name: "B", value: 30, color: "#1e40af" },
-    { name: "C", value: 20, color: "#ca8a04" },
-    { name: "D", value: 10, color: "#b91c1c" },
-  ];
-
-  const attendanceData: AttendanceDatum[] = [
-    { name: "A", value: 92 },
-    { name: "B", value: 88 },
-    { name: "C", value: 95 },
-    { name: "D", value: 82 },
-    { name: "E", value: 90 },
-    { name: "F", value: 93 },
-  ];
-
-  const monthlyData: MonthlyDatum[] = [
-    { month: "Jan", value: 92 },
-    { month: "Feb", value: 94 },
-    { month: "Mar", value: 91 },
-    { month: "Apr", value: 93 },
-    { month: "May", value: 95 },
-  ];
+  const activeAlerts = view.riskStudents.length + view.submissionsPending;
 
   return (
-    <div className="p-8 bg-[#f8fafc] min-h-screen font-sans">
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center gap-4">
-          <div className="relative">
-            <button
-              onClick={() => {
-                setIsClassDropdownOpen(!isClassDropdownOpen);
-                setIsTimeDropdownOpen(false);
-              }}
-              className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-100 rounded-xl text-sm font-medium text-slate-600 shadow-sm hover:bg-gray-50"
-            >
-              {selectedClass}
-              <ChevronDown size={16} className={`${isClassDropdownOpen ? "rotate-180" : ""}`} />
-            </button>
-
-            {isClassDropdownOpen && (
-              <div className="absolute top-12 left-0 w-48 bg-white border-gray-100 rounded-xl shadow-lg p-1 z-20">
-                {classOptions.map((option) => (
-                  <button
-                    key={option}
-                    onClick={() => {
-                      setSelectedClass(option);
-                      setIsClassDropdownOpen(false);
-                    }}
-                    className={`w-full flex items-center justify-between px-3 py-2 text-sm rounded-lg ${
-                      option === selectedClass ? "bg-[#2da594] text-white" : "hover:bg-slate-50 text-slate-600"
-                    }`}
-                  >
-                    {option}
-                    {option === selectedClass && <Check size={14} />}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="relative">
-            <button
-              onClick={() => {
-                setIsTimeDropdownOpen(!isTimeDropdownOpen);
-                setIsClassDropdownOpen(false);
-              }}
-              className="flex items-center gap-2 px-6 py-2.5 bg-white border border-gray-100 rounded-xl text-sm font-medium text-slate-600 shadow-sm hover:bg-gray-50"
-            >
-              {selectedTime}
-              <ChevronDown size={16} className={`${isTimeDropdownOpen ? "rotate-180" : ""}`} />
-            </button>
-
-            {isTimeDropdownOpen && (
-              <div className="absolute top-12 left-0 w-48 bg-white border-gray-100 rounded-xl shadow-lg p-1 z-20">
-                {timeOptions.map((option) => (
-                  <button
-                    key={option}
-                    onClick={() => {
-                      setSelectedTime(option);
-                      setIsTimeDropdownOpen(false);
-                    }}
-                    className={`w-full flex items-center justify-between px-3 py-2 text-sm rounded-lg ${
-                      option === selectedTime ? "bg-[#2da594] text-white" : "hover:bg-slate-50 text-slate-600"
-                    }`}
-                  >
-                    {option}
-                    {option === selectedTime && <Check size={14} />}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h2 className="text-xl font-bold text-slate-900">Teaching reports</h2>
+          <p className="mt-1 text-sm text-slate-500">
+            Operational view for attendance, outcomes, and intervention priorities.
+          </p>
         </div>
 
-        <button className="flex items-center gap-2 px-4 py-2 bg-white border-gray-100 rounded-lg text-sm font-medium text-slate-700 hover:bg-blue-400 shadow-sm">
+        <button
+          type="button"
+          className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
+        >
           <Download size={16} />
-          Export Reports
+          Export snapshot
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <StatCard label="Avg Attendance" value="93.2%" change="+2.1%" icon={<ClipboardCheck size={20} />} />
-        <StatCard label="Total Students" value="1,234" change="+12" icon={<Users size={20} />} />
-        <StatCard label="Avg Performance" value="77.2%" change="+3.5%" icon={<TrendingUp size={20} />} />
-        <StatCard label="Pass Rate" value="94.8%" change="+1.2%" icon={<GraduationCap size={20} />} />
+      <div className="grid grid-cols-1 gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm lg:grid-cols-3">
+        <label className="space-y-1">
+          <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+            Class scope
+          </span>
+          <select
+            value={selectedClass}
+            onChange={(e) => setSelectedClass(e.target.value as "all" | "cse24a" | "cse24b")}
+            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+          >
+            <option value="all">All assigned classes</option>
+            <option value="cse24a">CSE 2024 - A</option>
+            <option value="cse24b">CSE 2024 - B</option>
+          </select>
+        </label>
+
+        <label className="space-y-1">
+          <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+            Time range
+          </span>
+          <select
+            value={selectedRange}
+            onChange={(e) => setSelectedRange(e.target.value as "week" | "month" | "term")}
+            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+          >
+            <option value="week">This week</option>
+            <option value="month">This month</option>
+            <option value="term">This term</option>
+          </select>
+        </label>
+
+        <div className="rounded-xl border border-amber-100 bg-amber-50 px-3 py-2">
+          <p className="text-[10px] font-black uppercase tracking-widest text-amber-700">
+            Attention required
+          </p>
+          <p className="mt-1 text-lg font-bold text-amber-800">{activeAlerts} open items</p>
+          <p className="text-xs text-amber-700">At-risk students + pending submissions</p>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        <ChartContainer title="Attendance by Class">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <KPI_CARD
+          label="Average attendance"
+          value={`${view.avgAttendance}%`}
+          change="+1.8%"
+          helper="Compared to previous window"
+          icon={<ClipboardCheck size={20} />}
+        />
+        <KPI_CARD
+          label="Students in scope"
+          value={String(view.totalStudents)}
+          change="+6 enrolled"
+          helper="Current roster for selected view"
+          icon={<Users size={20} />}
+        />
+        <KPI_CARD
+          label="Average score"
+          value={`${view.avgScore}%`}
+          change="+2.4%"
+          helper="Across latest graded assessments"
+          icon={<TrendingUp size={20} />}
+        />
+        <KPI_CARD
+          label="Pass rate"
+          value={`${view.passRate}%`}
+          change="+1.2%"
+          helper="Learners above passing threshold"
+          icon={<GraduationCap size={20} />}
+        />
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <ChartContainer
+          title="Attendance by class"
+          subtitle="Find sections that need immediate follow-up"
+        >
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={attendanceData}>
+            <BarChart data={view.attendanceByClass}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-              <XAxis dataKey="name" axisLine={false} tickLine={false} />
-              <YAxis axisLine={false} tickLine={false} />
+              <XAxis dataKey="className" axisLine={false} tickLine={false} />
+              <YAxis domain={[0, 100]} axisLine={false} tickLine={false} />
               <Tooltip />
               <Bar dataKey="value" fill="#1e40af" radius={[4, 4, 0, 0]} barSize={40} />
             </BarChart>
           </ResponsiveContainer>
         </ChartContainer>
 
-        <ChartContainer title="Monthly Attendance Trend">
+        <ChartContainer
+          title="Attendance trend"
+          subtitle="Useful for spotting week-over-week slippage"
+        >
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={monthlyData}>
+            <LineChart data={trendAdjusted}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-              <XAxis dataKey="month" axisLine={false} tickLine={false} />
-              <YAxis domain={[85, 100]} axisLine={false} tickLine={false} />
+              <XAxis dataKey="slot" axisLine={false} tickLine={false} />
+              <YAxis domain={[70, 100]} axisLine={false} tickLine={false} />
               <Tooltip />
-              <Line type="monotone" dataKey="value" stroke="#14b8a6" strokeWidth={3} dot={{ r: 5 }} />
+              <Line
+                type="monotone"
+                dataKey="value"
+                stroke="#14b8a6"
+                strokeWidth={3}
+                dot={{ r: 4 }}
+              />
             </LineChart>
           </ResponsiveContainer>
         </ChartContainer>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <ChartContainer title="Subject-wise Performance">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <ChartContainer
+          title="Subject performance"
+          subtitle="Compare achieved score against full marks"
+        >
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart layout="vertical" data={subjectData} margin={{ left: 20 }}>
+            <BarChart layout="vertical" data={view.subjectPerformance} margin={{ left: 20 }}>
               <CartesianGrid strokeDasharray="3 3" horizontal vertical={false} stroke="#f1f5f9" />
               <XAxis type="number" domain={[0, 100]} hide />
               <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} />
               <Tooltip />
-              <Bar dataKey="full" fill="#cbd5e1" barSize={35} />
-              <Bar dataKey="score" fill="#166534" barSize={35} />
+              <Legend />
+              <Bar dataKey="full" fill="#cbd5e1" barSize={28} name="Full marks" />
+              <Bar dataKey="score" fill="#166534" barSize={28} name="Average score" />
             </BarChart>
           </ResponsiveContainer>
         </ChartContainer>
 
-        <ChartContainer title="Grade Distribution">
+        <ChartContainer
+          title="Grade distribution"
+          subtitle="Use this to monitor outcome spread"
+        >
           <div className="flex flex-col h-full">
             <ResponsiveContainer width="100%" height="80%">
               <PieChart>
-                <Pie data={gradeData} innerRadius={60} outerRadius={100} paddingAngle={5} dataKey="value">
-                  {gradeData.map((entry, index) => (
+                <Pie
+                  data={view.gradeMix}
+                  innerRadius={58}
+                  outerRadius={95}
+                  paddingAngle={3}
+                  dataKey="value"
+                >
+                  {view.gradeMix.map((entry, index) => (
                     <Cell key={index} fill={entry.color} />
                   ))}
                 </Pie>
@@ -256,15 +407,87 @@ const TeacherReportData = () => {
             </ResponsiveContainer>
 
             <div className="flex flex-wrap justify-center gap-4 mt-2">
-              {gradeData.map((item) => (
+              {view.gradeMix.map((item) => (
                 <div key={item.name} className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
-                  <span className="text-xs text-slate-600">{item.name}: {item.value}%</span>
+                  <div
+                    className={`h-3 w-3 rounded-full ${
+                      GRADE_COLOR_CLASS[item.name] ?? "bg-slate-400"
+                    }`}
+                  />
+                  <span className="text-xs text-slate-600">
+                    {item.name}: {item.value}%
+                  </span>
                 </div>
               ))}
             </div>
           </div>
         </ChartContainer>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+        <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+          <div className="mb-4 flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4 text-amber-600" />
+            <h3 className="text-lg font-bold text-slate-800">Students needing intervention</h3>
+          </div>
+          {view.riskStudents.length === 0 ? (
+            <p className="text-sm text-slate-500">No risk signals in this selection.</p>
+          ) : (
+            <div className="space-y-2">
+              {view.riskStudents.map((student) => (
+                <div
+                  key={student.roll}
+                  className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50/70 px-4 py-3"
+                >
+                  <div>
+                    <p className="text-sm font-semibold text-slate-800">{student.name}</p>
+                    <p className="text-xs text-slate-500">{student.roll}</p>
+                  </div>
+                  <div className="text-right text-xs">
+                    <p className="font-semibold text-amber-700">
+                      Attendance: {student.attendance}%
+                    </p>
+                    <p className="text-rose-600">Score: {student.score}%</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+          <div className="mb-4 flex items-center gap-2">
+            <CalendarClock className="h-4 w-4 text-blue-600" />
+            <h3 className="text-lg font-bold text-slate-800">Action queue</h3>
+          </div>
+          <div className="space-y-3 text-sm">
+            <div className="rounded-xl border border-slate-100 bg-slate-50/70 p-3">
+              <p className="font-semibold text-slate-800">
+                {view.submissionsPending} mark submissions pending review
+              </p>
+              <p className="text-xs text-slate-500">
+                Complete review to keep report cards on schedule.
+              </p>
+            </div>
+            <div className="rounded-xl border border-slate-100 bg-slate-50/70 p-3">
+              <p className="font-semibold text-slate-800">
+                Parent follow-ups required for {view.riskStudents.length} learners
+              </p>
+              <p className="text-xs text-slate-500">
+                Trigger calls/messages for low attendance and low performance.
+              </p>
+            </div>
+            <div className="rounded-xl border border-slate-100 bg-slate-50/70 p-3">
+              <div className="flex items-center gap-2 font-semibold text-slate-800">
+                <FileCheck2 className="h-4 w-4 text-emerald-600" />
+                Report sync healthy
+              </div>
+              <p className="text-xs text-slate-500">
+                Last export was generated successfully today.
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

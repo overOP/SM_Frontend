@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { 
   Search, 
-  Plus, 
   Calendar, 
   
   MapPin, 
@@ -68,7 +67,7 @@ const StudentEvents: React.FC = () => {
       case "Sports": return "success";
       case "Meeting": return "warning";
       case "Academic": return "info";
-      case "Holiday": return "error";
+      case "Holiday": return "danger";
       default: return "default";
     }
   };

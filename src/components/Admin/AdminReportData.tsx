@@ -206,7 +206,9 @@ const AdminReportData: React.FC = () => {
             <h3 className="text-lg font-black text-slate-800 tracking-tight">Individual Student Reports</h3>
         </div>
         <Card noPadding className="border-none shadow-xl shadow-slate-200/50 overflow-hidden">
-          {/* Student report table content will go here */}
+          <div className="p-8 text-center text-sm text-slate-400 font-medium">
+            Student report table content will go here.
+          </div>
         </Card>
       </div>
 

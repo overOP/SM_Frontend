@@ -22,6 +22,21 @@ const USERS: Record<string, Credentials> = {
   "parent@edumanage.com": { password: "parent123", role: "parent" },
 };
 
+const DISPLAY_NAMES: Record<string, string> = {
+  "admin@edumanage.com": "Admin User",
+  "teacher@edumanage.com": "Teacher User",
+  "student@edumanage.com": "Ayush Tiwari",
+  "parent@edumanage.com": "Parent User",
+};
+
+/** Demo ids for RBAC + mock result rows (no backend). */
+const DEMO_USER_IDS: Record<string, string> = {
+  "admin@edumanage.com": "usr_admin",
+  "teacher@edumanage.com": "usr_teacher",
+  "student@edumanage.com": "stu_demo_001",
+  "parent@edumanage.com": "usr_parent",
+};
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(() => {
     const stored = localStorage.getItem("user");
@@ -32,7 +47,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       localStorage.removeItem("user"); // wipe stale/invalid data
       return null;
     }
-    return parsed;
+    const key = parsed.email.toLowerCase();
+    return { ...parsed, id: parsed.id ?? DEMO_USER_IDS[key] };
   });
 
   const [loading, setLoading] = useState(true);
@@ -50,7 +66,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return { success: false, message: "Invalid email or password" };
       }
 
-      const userData: User = { email, role: found.role };
+      const key = email.toLowerCase();
+      const userData: User = {
+        email,
+        role: found.role,
+        name: DISPLAY_NAMES[key],
+        id: DEMO_USER_IDS[key],
+      };
       setUser(userData);
       localStorage.setItem("user", JSON.stringify(userData));
 

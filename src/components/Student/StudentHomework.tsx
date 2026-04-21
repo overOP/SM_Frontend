@@ -133,7 +133,7 @@ const StudentHomework: React.FC = () => {
       header: 'Action',
       render: (row: HomeworkItem) => (
         <Button 
-          variant={row.status === 'pending' ? 'default' : 'outline'} 
+          variant={row.status === 'pending' ? 'primary' : 'outline'} 
           size="sm" 
           className="rounded-xl h-9 px-6 font-bold text-[11px] uppercase tracking-widest transition-all hover:scale-105"
           onClick={() => handleActionClick(row)}
@@ -165,7 +165,10 @@ const StudentHomework: React.FC = () => {
             />
             {searchTerm && (
               <button 
+                type="button"
                 onClick={() => setSearchTerm("")}
+                aria-label="Clear assignment search"
+                title="Clear search"
                 className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-600 transition-colors"
               >
                 <X size={16} />
