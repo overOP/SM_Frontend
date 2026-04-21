@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ShieldCheck, Users, GraduationCap, AlertTriangle } from "lucide-react";
 import { Button, Card } from "../../../components/ui";
 import type { Student } from "../types";
@@ -37,15 +37,24 @@ export function AdminStudentsFeature() {
   });
   const [activeStudentId, setActiveStudentId] = useState<string | null>(null);
   const [activeStudent, setActiveStudent] = useState<Student | null>(null);
+  const loadRequestRef = useRef(0);
+  const detailRequestRef = useRef(0);
 
   const load = useCallback(async () => {
+    const requestId = ++loadRequestRef.current;
     setLoading(true);
-    const data = await fetchStudents(filters);
-    setRows(data.rows);
-    setTotal(data.total);
-    setPageSize(data.pageSize);
-    setStats(data.stats);
-    setLoading(false);
+    try {
+      const data = await fetchStudents(filters);
+      if (requestId !== loadRequestRef.current) return;
+      setRows(data.rows);
+      setTotal(data.total);
+      setPageSize(data.pageSize);
+      setStats(data.stats);
+    } finally {
+      if (requestId === loadRequestRef.current) {
+        setLoading(false);
+      }
+    }
   }, [filters]);
 
   useEffect(() => {
@@ -55,10 +64,16 @@ export function AdminStudentsFeature() {
   useEffect(() => {
     const init = async () => {
       const options = await fetchClassSectionOptions();
+      if (loadRequestRef.current < 0) return;
       setClassOptions(["all", ...options.classes]);
       setSectionsByClass(options.sectionsByClass);
     };
     void init();
+    return () => {
+      // Invalidate pending async updates for unmounted component.
+      loadRequestRef.current = -1;
+      detailRequestRef.current = -1;
+    };
   }, []);
 
   useEffect(() => {
@@ -78,6 +93,7 @@ export function AdminStudentsFeature() {
 
   useEffect(() => {
     if (!activeStudentId) return;
+    const requestId = ++detailRequestRef.current;
     const local = rows.find((r) => r.id === activeStudentId);
     if (local) {
       setActiveStudent(local);
@@ -85,6 +101,7 @@ export function AdminStudentsFeature() {
     }
     void (async () => {
       const fetched = await fetchStudentById(activeStudentId);
+      if (requestId !== detailRequestRef.current) return;
       if (fetched) setActiveStudent(fetched);
     })();
   }, [activeStudentId, rows]);
@@ -182,8 +199,8 @@ export function AdminStudentsFeature() {
         totalInView={total}
       />
 
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1.05fr_1fr]">
-        <div>
+      <div className="grid grid-cols-1 gap-4 2xl:grid-cols-[1.15fr_1fr]">
+        <div className="min-w-0">
           {loading ? (
             <StudentTableSkeleton />
           ) : (
@@ -224,17 +241,19 @@ export function AdminStudentsFeature() {
           </Card>
         </div>
 
-        {activeStudent ? (
-          <StudentManagementDetailView
-            student={activeStudent}
-            onStudentPatched={(next) => {
-              setActiveStudent(next);
-              setRows((prev) => prev.map((row) => (row.id === next.id ? next : row)));
-            }}
-          />
-        ) : (
-          <AdminDetailEmpty message="Select a student to open the management detail view." />
-        )}
+        <div className="min-w-0">
+          {activeStudent ? (
+            <StudentManagementDetailView
+              student={activeStudent}
+              onStudentPatched={(next) => {
+                setActiveStudent(next);
+                setRows((prev) => prev.map((row) => (row.id === next.id ? next : row)));
+              }}
+            />
+          ) : (
+            <AdminDetailEmpty message="Select a student to open the management detail view." />
+          )}
+        </div>
       </div>
       <BulkImportModal
         isOpen={isImportOpen}

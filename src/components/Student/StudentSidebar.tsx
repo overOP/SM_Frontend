@@ -80,7 +80,7 @@ const StudentSidebar: React.FC<StudentSidebarProps> = ({
           
           {!collapsed && (
             <div className="flex-1 overflow-hidden animate-in fade-in slide-in-from-left-4 duration-300">
-              <h2 className="font-black text-slate-800 text-lg tracking-tighter truncate uppercase leading-none">EduManage</h2>
+              <h2 className="font-black text-slate-800 text-lg tracking-tighter truncate uppercase leading-none">Sikshyanetra</h2>
               <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mt-1">Student Portal</p>
             </div>
           )}

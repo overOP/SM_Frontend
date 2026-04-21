@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import {
   CheckCircle2,
@@ -123,8 +123,14 @@ export function StudentManagementDetailView({
     return rows[rows.length - 1].balanceAfter;
   }, [financialQuery.data]);
 
+  useEffect(() => {
+    if (!toast) return;
+    const timer = setTimeout(() => setToast(null), 2200);
+    return () => clearTimeout(timer);
+  }, [toast]);
+
   return (
-    <div className="grid grid-cols-1 gap-4 xl:grid-cols-[210px_1fr]">
+    <div className="grid grid-cols-1 gap-4 2xl:grid-cols-[210px_1fr]">
       <Card className="rounded-2xl p-3">
         <div className="space-y-1">
           {tabs.map((item) => (
@@ -145,7 +151,7 @@ export function StudentManagementDetailView({
         </div>
       </Card>
 
-      <Card className="space-y-3 rounded-2xl p-4">
+      <Card className="min-w-0 space-y-3 rounded-2xl p-4">
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-100 bg-slate-50 p-3">
           <div>
             <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
@@ -201,7 +207,7 @@ export function StudentManagementDetailView({
         </div>
 
         {tab === "overview" ? (
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
             <Card className="rounded-xl border p-3">
               <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
                 Contact
@@ -229,7 +235,8 @@ export function StudentManagementDetailView({
 
         {tab === "academic" ? (
           <div className="space-y-2">
-            <table className="w-full border-collapse text-sm">
+            <div className="w-full overflow-x-auto">
+              <table className="min-w-[640px] w-full border-collapse text-sm">
               <thead>
                 <tr className="border-b border-slate-100 bg-slate-50">
                   <th className="px-2 py-2 text-left text-xs font-black uppercase tracking-wider text-slate-400">
@@ -266,7 +273,8 @@ export function StudentManagementDetailView({
                   </tr>
                 ))}
               </tbody>
-            </table>
+              </table>
+            </div>
           </div>
         ) : null}
 
@@ -304,7 +312,8 @@ export function StudentManagementDetailView({
                 }
               />
             </div>
-            <table className="w-full border-collapse text-sm">
+            <div className="w-full overflow-x-auto">
+              <table className="min-w-[760px] w-full border-collapse text-sm">
               <thead>
                 <tr className="border-b border-slate-100 bg-slate-50">
                   <th className="px-2 py-2 text-left text-xs font-black uppercase tracking-wider text-slate-400">
@@ -335,12 +344,13 @@ export function StudentManagementDetailView({
                   </tr>
                 ))}
               </tbody>
-            </table>
+              </table>
+            </div>
           </div>
         ) : null}
 
         {tab === "documents" ? (
-          <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 2xl:grid-cols-2">
             <Card className="rounded-xl border p-3">
               <p className="mb-2 text-xs font-black uppercase tracking-widest text-slate-400">
                 Document preview

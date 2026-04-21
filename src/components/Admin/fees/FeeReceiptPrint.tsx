@@ -32,7 +32,7 @@ export function FeeReceiptPrint({ payment, invoice, className }: FeeReceiptPrint
         className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm print:shadow-none print:border-none"
       >
         <div className="border-b border-slate-100 pb-6 text-center">
-          <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400">EduManage</p>
+          <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400">Sikshyanetra</p>
           <h2 className="mt-2 text-xl font-black text-slate-900">Payment receipt</h2>
           <p className="mt-1 text-xs text-slate-500">Official record (demo)</p>
         </div>

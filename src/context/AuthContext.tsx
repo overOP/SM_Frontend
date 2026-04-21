@@ -16,25 +16,25 @@ interface Credentials {
 }
 
 const USERS: Record<string, Credentials> = {
-  "admin@edumanage.com": { password: "admin123", role: "admin" },
-  "teacher@edumanage.com": { password: "teacher123", role: "teacher" },
-  "student@edumanage.com": { password: "student123", role: "student" },
-  "parent@edumanage.com": { password: "parent123", role: "parent" },
+  "admin@sikshyanetra.com": { password: "admin123", role: "admin" },
+  "teacher@sikshyanetra.com": { password: "teacher123", role: "teacher" },
+  "student@sikshyanetra.com": { password: "student123", role: "student" },
+  "parent@sikshyanetra.com": { password: "parent123", role: "parent" },
 };
 
 const DISPLAY_NAMES: Record<string, string> = {
-  "admin@edumanage.com": "Admin User",
-  "teacher@edumanage.com": "Teacher User",
-  "student@edumanage.com": "Ayush Tiwari",
-  "parent@edumanage.com": "Parent User",
+  "admin@sikshyanetra.com": "Admin User",
+  "teacher@sikshyanetra.com": "Teacher User",
+  "student@sikshyanetra.com": "Ayush Tiwari",
+  "parent@sikshyanetra.com": "Parent User",
 };
 
 /** Demo ids for RBAC + mock result rows (no backend). */
 const DEMO_USER_IDS: Record<string, string> = {
-  "admin@edumanage.com": "usr_admin",
-  "teacher@edumanage.com": "usr_teacher",
-  "student@edumanage.com": "stu_demo_001",
-  "parent@edumanage.com": "usr_parent",
+  "admin@sikshyanetra.com": "usr_admin",
+  "teacher@sikshyanetra.com": "usr_teacher",
+  "student@sikshyanetra.com": "stu_demo_001",
+  "parent@sikshyanetra.com": "usr_parent",
 };
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {

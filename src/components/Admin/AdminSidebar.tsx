@@ -77,7 +77,7 @@ const AdminSidebar = ({
 
           {!collapsed && (
             <div className="animate-in fade-in slide-in-from-left-2 duration-300">
-              <h2 className="font-black text-slate-800 text-sm tracking-tight leading-none">EduManage</h2>
+              <h2 className="font-black text-slate-800 text-sm tracking-tight leading-none">Sikshyanetra</h2>
               <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-1">Admin Portal</p>
             </div>
           )}

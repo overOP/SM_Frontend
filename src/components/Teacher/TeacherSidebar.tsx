@@ -74,7 +74,7 @@ const TeacherSidebar = ({
 
           {!collapsed && (
             <div>
-              <h2 className="font-bold text-gray-800 text-sm">EduManage</h2>
+              <h2 className="font-bold text-gray-800 text-sm">Sikshyanetra</h2>
               <p className="text-xs text-gray-500">Faculty portal</p>
             </div>
           )}

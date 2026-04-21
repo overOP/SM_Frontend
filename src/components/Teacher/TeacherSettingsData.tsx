@@ -49,30 +49,30 @@ const TeacherSettingData = () => {
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2">
-          <label className="text-sm font-semibold text-slate-700">School Name</label>
-          <input type="text" defaultValue="EduManage International School" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20" />
+          <label htmlFor="teacher-school-name" className="text-sm font-semibold text-slate-700">School Name</label>
+          <input id="teacher-school-name" type="text" defaultValue="Sikshyanetra International School" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20" />
         </div>
         <div className="space-y-2">
-          <label className="text-sm font-semibold text-slate-700">School Code</label>
-          <input type="text" defaultValue="EMIS-2024" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20" />
+          <label htmlFor="teacher-school-code" className="text-sm font-semibold text-slate-700">School Code</label>
+          <input id="teacher-school-code" type="text" defaultValue="EMIS-2024" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20" />
         </div>
       </div>
       <div className="space-y-2">
-        <label className="text-sm font-semibold text-slate-700">Address</label>
-        <textarea rows={2} defaultValue="123 Education Lane, Academic City" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm resize-none" />
+        <label htmlFor="teacher-school-address" className="text-sm font-semibold text-slate-700">Address</label>
+        <textarea id="teacher-school-address" rows={2} defaultValue="123 Education Lane, Academic City" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm resize-none" />
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="space-y-2">
-          <label className="text-sm font-semibold text-slate-700">Phone</label>
-          <input type="text" defaultValue="+977 12345678" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm" />
+          <label htmlFor="teacher-school-phone" className="text-sm font-semibold text-slate-700">Phone</label>
+          <input id="teacher-school-phone" type="text" defaultValue="+977 12345678" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm" />
         </div>
         <div className="space-y-2">
-          <label className="text-sm font-semibold text-slate-700">Email</label>
-          <input type="email" defaultValue="info@edumanage.com" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm" />
+          <label htmlFor="teacher-school-email" className="text-sm font-semibold text-slate-700">Email</label>
+          <input id="teacher-school-email" type="email" defaultValue="info@sikshyanetra.com" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm" />
         </div>
         <div className="space-y-2">
-          <label className="text-sm font-semibold text-slate-700">Website</label>
-          <input type="url" defaultValue="https://www.edumanage.com" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm" />
+          <label htmlFor="teacher-school-website" className="text-sm font-semibold text-slate-700">Website</label>
+          <input id="teacher-school-website" type="url" defaultValue="https://www.sikshyanetra.com" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm" />
         </div>
       </div>
     </div>
@@ -82,15 +82,15 @@ const TeacherSettingData = () => {
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2">
-          <label className="text-sm font-semibold text-slate-700">Current Academic Year</label>
-          <select className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm">
+          <label htmlFor="teacher-academic-year" className="text-sm font-semibold text-slate-700">Current Academic Year</label>
+          <select id="teacher-academic-year" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm">
             <option>2025-26</option>
             <option>2026-27</option>
           </select>
         </div>
         <div className="space-y-2">
-          <label className="text-sm font-semibold text-slate-700">Current Semester</label>
-          <select className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm">
+          <label htmlFor="teacher-academic-semester" className="text-sm font-semibold text-slate-700">Current Semester</label>
+          <select id="teacher-academic-semester" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm">
             <option>Semester 1</option>
             <option>Semester 2</option>
           </select>
@@ -98,12 +98,12 @@ const TeacherSettingData = () => {
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2">
-          <label className="text-sm font-semibold text-slate-700">Year Start Date</label>
-          <input type="date" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm" />
+          <label htmlFor="teacher-year-start-date" className="text-sm font-semibold text-slate-700">Year Start Date</label>
+          <input id="teacher-year-start-date" type="date" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm" />
         </div>
         <div className="space-y-2">
-          <label className="text-sm font-semibold text-slate-700">Year End Date</label>
-          <input type="date" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm" />
+          <label htmlFor="teacher-year-end-date" className="text-sm font-semibold text-slate-700">Year End Date</label>
+          <input id="teacher-year-end-date" type="date" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm" />
         </div>
       </div>
     </div>
@@ -124,7 +124,12 @@ const TeacherSettingData = () => {
               <h3 className="text-lg font-bold text-slate-900">{role.name}</h3>
               <p className="text-sm text-slate-400">{role.permissions.length} permissions</p>
             </div>
-            <button className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg">
+            <button
+              type="button"
+              title={`Edit ${role.name} permissions`}
+              aria-label={`Edit ${role.name} permissions`}
+              className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg"
+            >
               <Edit2 className="w-4 h-4" />
             </button>
           </div>
@@ -155,6 +160,9 @@ const TeacherSettingData = () => {
             <p className="text-sm text-slate-400">{item.desc}</p>
           </div>
           <button
+            type="button"
+            title={`Toggle ${item.title}`}
+            aria-label={`Toggle ${item.title}`}
             onClick={() => toggleSwitch(item.key)}
             className={`relative w-12 h-6 rounded-full transition ${notifications[item.key] ? "bg-blue-600" : "bg-slate-300"}`}
           >
@@ -182,6 +190,7 @@ const TeacherSettingData = () => {
           {navItems.map((item) => (
             <button
               key={item.id}
+              type="button"
               onClick={() => setActiveTab(item.id)}
               className={`flex items-center justify-center gap-2 p-3 bg-white rounded-xl border-t-4 shadow-sm transition ${
                 activeTab === item.id ? `${item.color} text-slate-900 font-semibold` : "border-transparent text-slate-500"
@@ -203,7 +212,10 @@ const TeacherSettingData = () => {
       </div>
 
       <div className="max-w-4xl mx-auto flex justify-end mt-6">
-        <button className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-lg font-semibold shadow-md hover:bg-blue-700 active:scale-95 transition">
+        <button
+          type="button"
+          className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-lg font-semibold shadow-md hover:bg-blue-700 active:scale-95 transition"
+        >
           <Save className="w-4 h-4" />
           Save Changes
         </button>

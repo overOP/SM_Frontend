@@ -1,16 +1,16 @@
-import { useContext, useState } from "react";
+import { Suspense, lazy, useContext, useMemo, useState } from "react";
 import { Search, Bell, Menu } from "lucide-react";
 
 import TeacherSidebar from "../components/Teacher/TeacherSidebar";
-import TeacherHomeDashboard from "../components/Teacher/TeacherHomeDashboard";
-import TeacherClassData from "../components/Teacher/TeacherClassData";
-import TeacherTimetableData from "../components/Teacher/TeacherTimetableData";
-import TeacherReportData from "../components/Teacher/TeacherReportData";
-import TeacherSettingsData from "../components/Teacher/TeacherSettingsData";
-import TeacherAttendanceData from "../components/Teacher/TeacherAttendanceData";
-import TeacherEventData from "../components/Teacher/TeacherEventData";
-import TeacherAnnouncementData from "../components/Teacher/TeacherAnnouncementData";
-import TeacherResultData from "../components/Teacher/TeacherResultData";
+const TeacherHomeDashboard = lazy(() => import("../components/Teacher/TeacherHomeDashboard"));
+const TeacherClassData = lazy(() => import("../components/Teacher/TeacherClassData"));
+const TeacherTimetableData = lazy(() => import("../components/Teacher/TeacherTimetableData"));
+const TeacherReportData = lazy(() => import("../components/Teacher/TeacherReportData"));
+const TeacherSettingsData = lazy(() => import("../components/Teacher/TeacherSettingsData"));
+const TeacherAttendanceData = lazy(() => import("../components/Teacher/TeacherAttendanceData"));
+const TeacherEventData = lazy(() => import("../components/Teacher/TeacherEventData"));
+const TeacherAnnouncementData = lazy(() => import("../components/Teacher/TeacherAnnouncementData"));
+const TeacherResultData = lazy(() => import("../components/Teacher/TeacherResultData"));
 
 import {
   TEACHER_SIDEBAR_GROUPS,
@@ -184,7 +184,7 @@ const TeacherDashboard = () => {
     },
   ]);
 
-  const renderContent = () => {
+  const tabComponent = useMemo(() => {
     switch (activeItem) {
       case "Classes":
         return <TeacherClassData />;
@@ -211,7 +211,7 @@ const TeacherDashboard = () => {
           />
         );
     }
-  };
+  }, [activeItem, auth?.user?.name]);
 
   return (
     <div className="flex h-screen bg-[#f8fafc] overflow-hidden">
@@ -246,7 +246,17 @@ const TeacherDashboard = () => {
           />
         </header>
         <main className="flex-1 overflow-y-auto p-8 bg-[#f8fafc]">
-          <div className="max-w-1400 mx-auto">{renderContent()}</div>
+          <div className="max-w-1400 mx-auto">
+            <Suspense
+              fallback={
+                <div className="rounded-2xl border border-slate-200 bg-white p-8 text-sm font-semibold text-slate-500">
+                  Loading {activeItem.toLowerCase()} module...
+                </div>
+              }
+            >
+              {tabComponent}
+            </Suspense>
+          </div>
         </main>
       </div>
     </div>

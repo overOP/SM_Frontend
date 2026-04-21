@@ -14,8 +14,8 @@ interface DataTableProps<T> {
 
 export function DataTable<T>({ columns, data, emptyMessage = "No results found" }: DataTableProps<T>) {
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-left border-collapse">
+    <div className="w-full overflow-x-auto">
+      <table className="min-w-[680px] w-full border-collapse text-left">
         <thead>
           <tr className="border-b border-slate-100">
             {columns.map((col, i) => (

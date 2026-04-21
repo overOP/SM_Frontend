@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { CheckCircle2, Clock, User, XCircle } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button, Card } from "../../../components/ui";
 import { AdminKpiRow } from "../../../components/Admin/shared/AdminKpiRow";
 import type { AttendanceStatus, AttendanceStudent } from "../types";
@@ -21,6 +21,7 @@ import {
 } from "../../shared/components/AdminFeatureStates";
 
 export function AttendanceFeature() {
+  const queryClient = useQueryClient();
   const { filters, setClassName, setDateIso, setSearch, setPage, clear } =
     useAttendanceFilters();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -117,7 +118,31 @@ export function AttendanceFeature() {
   };
 
   const patchLocal = (next: AttendanceStudent) => {
-    rowsQuery.refetch();
+    queryClient.setQueryData(["attendance-rows", filters], (old: any) => {
+      if (!old?.rows) return old;
+      const updatedRows = old.rows.map((row: AttendanceStudent) =>
+        row.id === next.id ? next : row
+      );
+      const present = updatedRows.filter((row: AttendanceStudent) => row.status === "Present").length;
+      const absent = updatedRows.filter((row: AttendanceStudent) => row.status === "Absent").length;
+      const leave = updatedRows.filter((row: AttendanceStudent) => row.status === "On Leave").length;
+      const totalRows = updatedRows.length;
+
+      return {
+        ...old,
+        rows: updatedRows,
+        stats: old.stats
+          ? {
+              ...old.stats,
+              total: totalRows,
+              present,
+              absent,
+              leave,
+              attendanceRate: totalRows > 0 ? Math.round((present / totalRows) * 100) : 0,
+            }
+          : old.stats,
+      };
+    });
     setActiveId(next.id);
   };
 
@@ -164,8 +189,8 @@ export function AttendanceFeature() {
         onExport={exportRows}
       />
 
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1.05fr_1fr]">
-        <div>
+      <div className="grid grid-cols-1 gap-4 2xl:grid-cols-[1.15fr_1fr]">
+        <div className="min-w-0">
           {rowsQuery.isLoading ? (
             <AdminTableSkeleton title="Loading attendance..." rows={8} />
           ) : (
@@ -213,11 +238,13 @@ export function AttendanceFeature() {
           ) : null}
         </div>
 
-        {activeStudent ? (
-          <AttendanceDetailView student={activeStudent} onPatched={patchLocal} />
-        ) : (
-          <AdminDetailEmpty message="Select a row to open attendance detail." />
-        )}
+        <div className="min-w-0">
+          {activeStudent ? (
+            <AttendanceDetailView student={activeStudent} onPatched={patchLocal} />
+          ) : (
+            <AdminDetailEmpty message="Select a row to open attendance detail." />
+          )}
+        </div>
       </div>
     </div>
   );

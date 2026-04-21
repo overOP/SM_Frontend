@@ -9,15 +9,15 @@ export function AdminTableSkeleton({
   rows?: number;
 }) {
   return (
-    <Card noPadding className="overflow-hidden rounded-2xl">
+    <Card noPadding className="rounded-2xl">
       <div className="border-b border-slate-100 px-4 py-2 text-xs font-bold uppercase tracking-wider text-slate-300">
         {title}
       </div>
-      <div className="space-y-1 p-3">
+      <div className="space-y-1 overflow-x-auto p-3">
         {Array.from({ length: rows }).map((_, i) => (
           <div
             key={i}
-            className="grid grid-cols-[28px_2fr_1fr_1fr_1fr_1fr] items-center gap-3 rounded-lg px-2 py-2"
+            className="grid min-w-[720px] grid-cols-[28px_2fr_1fr_1fr_1fr_1fr] items-center gap-3 rounded-lg px-2 py-2"
           >
             <div className="h-3 w-3 animate-pulse rounded bg-slate-200" />
             <div className="h-3 w-32 animate-pulse rounded bg-slate-200" />

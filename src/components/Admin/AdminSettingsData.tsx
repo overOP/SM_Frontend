@@ -26,7 +26,7 @@ const SchoolForm = () => (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       <div className="flex flex-col">
         <FormLabel>School Name</FormLabel>
-        <Input icon={School} defaultValue="EduManage International School" />
+        <Input icon={School} defaultValue="Sikshyanetra International School" />
       </div>
       <div className="flex flex-col">
         <FormLabel>School Code</FormLabel>
@@ -53,11 +53,11 @@ const SchoolForm = () => (
       </div>
       <div>
         <FormLabel>Admin Email</FormLabel>
-        <Input icon={Mail} type="email" defaultValue="info@edumanage.com" />
+        <Input icon={Mail} type="email" defaultValue="info@sikshyanetra.com" />
       </div>
       <div>
         <FormLabel>Official Website</FormLabel>
-        <Input icon={Globe} type="url" defaultValue="https://www.edumanage.com" />
+        <Input icon={Globe} type="url" defaultValue="https://www.sikshyanetra.com" />
       </div>
     </div>
   </div>

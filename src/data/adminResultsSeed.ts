@@ -5,7 +5,7 @@ import { STUDENT_DEMO_ID, demoAcademicResults } from "./studentResultsData";
 export const adminDirectoryStudents: StudentDTO[] = [
   {
     id: STUDENT_DEMO_ID,
-    email: "student@edumanage.com",
+    email: "student@sikshyanetra.com",
     name: "Ayush Tiwari",
     rollNo: "CS24-0142",
     className: "B.Tech CSE — Year 2",

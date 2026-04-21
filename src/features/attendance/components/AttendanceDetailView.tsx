@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { CheckCircle2, Clock3, XCircle } from "lucide-react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Card, Select } from "../../../components/ui";
@@ -31,13 +31,7 @@ export function AttendanceDetailView({ student, onPatched }: AttendanceDetailVie
 
   const statusMutation = useMutation({
     mutationFn: (status: AttendanceStatus) => updateAttendanceStatus(student.id, status),
-    onMutate: async (next) => {
-      const prev = student.status;
-      onPatched({ ...student, status: next });
-      return { prev };
-    },
-    onError: (error, _next, context) => {
-      onPatched({ ...student, status: context?.prev ?? student.status });
+    onError: (error) => {
       setToast({
         type: "err",
         text: error instanceof Error ? error.message : "Failed to update attendance.",
@@ -55,8 +49,14 @@ export function AttendanceDetailView({ student, onPatched }: AttendanceDetailVie
     return rows.length ? Math.round((present / rows.length) * 100) : student.attendancePct;
   }, [historyQuery.data, student.attendancePct]);
 
+  useEffect(() => {
+    if (!toast) return;
+    const timer = setTimeout(() => setToast(null), 2200);
+    return () => clearTimeout(timer);
+  }, [toast]);
+
   return (
-    <Card className="space-y-3 rounded-2xl p-4">
+    <Card className="min-w-0 space-y-3 rounded-2xl p-4">
       <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
         <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
           Attendance profile
@@ -67,7 +67,7 @@ export function AttendanceDetailView({ student, onPatched }: AttendanceDetailVie
         </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="rounded-xl border border-slate-100 p-3">
           <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
             Current status

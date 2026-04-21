@@ -1,15 +1,10 @@
-import { useState, useMemo } from 'react';
-import { Megaphone, Calendar } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import { Calendar, Megaphone, Search } from "lucide-react";
+import { Button, Card, Input, StatusBadge } from "../ui";
+import { Modal } from "../ui/Modal";
+import { ParentCardGridSkeleton, ParentEmptyState } from "./shared/ParentModuleStates";
 
-// Importing your reusable components
-import { 
-  Card, 
-  StatusBadge, 
-  Button, 
-  Select 
-} from "../ui";
-
-// 1. Types & Mock Data Integration
 type NoticeTag = "event" | "exam" | "general";
 
 interface Notice {
@@ -22,119 +17,144 @@ interface Notice {
 
 const MOCK_NOTICES: Notice[] = [
   {
-    id: '1',
+    id: "1",
     title: "Annual Sports Day",
     tag: "event",
-    desc: "The annual sports day will be held on April 5th. All students are expected to participate in at least one event.",
+    desc: "Annual sports day will be held on April 5th. Students must register by Friday.",
     date: "2026-03-22",
   },
   {
-    id: '2',
+    id: "2",
     title: "Mid-Term Exam Schedule",
     tag: "exam",
-    desc: "Mid-term examinations will commence from April 14th. The detailed subject-wise schedule has been uploaded.",
+    desc: "Mid-term examinations commence from April 14th. Detailed schedule uploaded.",
     date: "2026-03-20",
   },
   {
-    id: '3',
+    id: "3",
     title: "PTM Scheduled for March 28",
     tag: "general",
-    desc: "Parent-Teacher Meeting is scheduled for Saturday, March 28th from 9 AM to 1 PM. Your presence is important.",
+    desc: "Parent-Teacher meeting is scheduled Saturday, March 28th from 9 AM to 1 PM.",
     date: "2026-03-18",
-  }
+  },
 ];
 
-const ParentAnnouncement = () => {
-  const [filter, setFilter] = useState<string>("All Categories");
+function badgeVariant(tag: NoticeTag) {
+  if (tag === "event") return "success";
+  if (tag === "exam") return "danger";
+  return "info";
+}
 
-  /* DATA INTEGRATION:
-     To fetch from an API, use a hook like:
-     const { data: notices, isLoading } = useQuery(['notices'], fetchNotices);
-  */
-  const notices = MOCK_NOTICES;
+export default function ParentAnnouncement() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [query, setQuery] = useState(searchParams.get("q") ?? "");
+  const [filter, setFilter] = useState<"all" | NoticeTag>((searchParams.get("type") as "all" | NoticeTag) ?? "all");
+  const [isLoading, setIsLoading] = useState(true);
+  const [activeNotice, setActiveNotice] = useState<Notice | null>(null);
 
-  // UX Improvement: Filtering logic
-  const filteredNotices = useMemo(() => {
-    if (filter === "All Categories") return notices;
-    return notices.filter(n => n.tag === filter.toLowerCase());
-  }, [filter, notices]);
+  useEffect(() => {
+    const next: Record<string, string> = {};
+    if (query.trim()) next.q = query.trim();
+    if (filter !== "all") next.type = filter;
+    setSearchParams(next, { replace: true });
+  }, [query, filter, setSearchParams]);
 
-  // Map tags to your StatusBadge variants
-  const getBadgeVariant = (tag: NoticeTag) => {
-    const variants: Record<NoticeTag, any> = {
-      event: "success",
-      exam: "danger",
-      general: "info"
-    };
-    return variants[tag];
-  };
+  useEffect(() => {
+    setIsLoading(true);
+    const timer = setTimeout(() => setIsLoading(false), 300);
+    return () => clearTimeout(timer);
+  }, [query, filter]);
+
+  const filteredNotices = useMemo(
+    () =>
+      MOCK_NOTICES.filter(
+        (n) =>
+          (filter === "all" || n.tag === filter) &&
+          (n.title.toLowerCase().includes(query.toLowerCase()) || n.desc.toLowerCase().includes(query.toLowerCase()))
+      ),
+    [filter, query]
+  );
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6 animate-in fade-in duration-700">
-      
-      {/* Header with Actions */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 px-2">
-        <div>
-          <h1 className="text-2xl font-black text-slate-800 tracking-tight">Announcements</h1>
-          <p className="text-slate-500 text-sm">Stay updated with the latest school news and events.</p>
-        </div>
-        <div className="flex gap-2">
-          <Select 
-            options={["All Categories", "Event", "Exam", "General"]} 
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-            className="w-44"
-          />
-          
-        </div>
-      </div>
-
-      {/* Announcements List */}
-      <Card className="border-none shadow-xl shadow-slate-200/40" noPadding>
-        <div className="divide-y divide-slate-50">
-          {filteredNotices.length > 0 ? filteredNotices.map((notice) => (
-            <div 
-              key={notice.id} 
-              className="p-6 flex flex-col md:flex-row items-start gap-6 hover:bg-slate-50/50 transition-colors group"
+    <div className="space-y-6">
+      <Card className="border-slate-200 bg-white">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className="text-[11px] font-black uppercase tracking-[0.18em] text-blue-600">Announcements</p>
+            <h2 className="mt-1 text-xl font-black text-slate-900">School notices</h2>
+            <p className="mt-1 text-sm text-slate-500">Stay updated with school-wide events and circulars.</p>
+          </div>
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+            <Input
+              placeholder="Search announcements..."
+              icon={Search}
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              className="w-full sm:w-72"
+            />
+            <select
+              value={filter}
+              onChange={(e) => setFilter(e.target.value as "all" | NoticeTag)}
+              title="Filter announcements by category"
+              aria-label="Filter announcements by category"
+              className="h-[42px] rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-50"
             >
-              {/* Icon Container */}
-              <div className="hidden md:flex w-14 h-14 shrink-0 rounded-2xl bg-white border border-slate-100 shadow-sm items-center justify-center text-blue-600 group-hover:scale-110 transition-transform">
-                <Megaphone size={24} />
-              </div>
+              <option value="all">All Categories</option>
+              <option value="event">Event</option>
+              <option value="exam">Exam</option>
+              <option value="general">General</option>
+            </select>
+          </div>
+        </div>
+      </Card>
 
-              <div className="flex-1 space-y-3">
-                <div className="flex flex-wrap items-center gap-3">
-                  <h4 className="text-lg font-bold text-slate-800">{notice.title}</h4>
-                  <StatusBadge status={notice.tag} variant={getBadgeVariant(notice.tag)} />
-                </div>
-
-                <p className="text-slate-600 leading-relaxed text-sm max-w-3xl">
-                  {notice.desc}
-                </p>
-
-                <div className="flex items-center gap-4 pt-1">
-                  <div className="flex items-center gap-2 text-slate-400 text-xs font-bold uppercase tracking-wider">
-                    <Calendar size={14} />
-                    {notice.date}
+      {isLoading ? (
+        <ParentCardGridSkeleton cards={3} />
+      ) : filteredNotices.length === 0 ? (
+        <ParentEmptyState title="No announcements found" description="No notices match your current search and filters." />
+      ) : (
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          {filteredNotices.map((notice) => (
+            <Card key={notice.id} className="border-slate-200">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="rounded-xl bg-blue-50 p-2 text-blue-600">
+                    <Megaphone size={16} />
                   </div>
-                  <Button variant="ghost" size="sm" className="text-blue-600 font-bold h-auto p-0 hover:bg-transparent">
-                    View Details →
+                  <StatusBadge status={notice.tag} variant={badgeVariant(notice.tag)} />
+                </div>
+                <h4 className="text-base font-bold text-slate-800">{notice.title}</h4>
+                <p className="text-sm text-slate-600">{notice.desc}</p>
+                <div className="flex items-center justify-between border-t border-slate-100 pt-3">
+                  <p className="flex items-center gap-1 text-xs text-slate-500">
+                    <Calendar size={13} />
+                    {notice.date}
+                  </p>
+                  <Button type="button" variant="outline" size="sm" onClick={() => setActiveNotice(notice)}>
+                    View
                   </Button>
                 </div>
               </div>
-            </div>
-          )) : (
-            <div className="py-20 text-center flex flex-col items-center">
-               <div className="bg-slate-50 p-4 rounded-full mb-4">
-                 <Megaphone size={32} className="text-slate-300" />
-               </div>
-               <p className="text-slate-400 font-medium">No announcements found in this category.</p>
-            </div>
-          )}
+            </Card>
+          ))}
         </div>
-      </Card>
+      )}
+
+      <Modal isOpen={Boolean(activeNotice)} onClose={() => setActiveNotice(null)} title="Announcement details">
+        {activeNotice ? (
+          <div className="space-y-3">
+            <StatusBadge status={activeNotice.tag} variant={badgeVariant(activeNotice.tag)} />
+            <h3 className="text-lg font-black text-slate-900">{activeNotice.title}</h3>
+            <p className="text-sm text-slate-600">{activeNotice.desc}</p>
+            <p className="text-xs text-slate-500">Date: {activeNotice.date}</p>
+            <div className="flex justify-end">
+              <Button type="button" onClick={() => setActiveNotice(null)}>
+                Close
+              </Button>
+            </div>
+          </div>
+        ) : null}
+      </Modal>
     </div>
   );
-};
-
-export default ParentAnnouncement;
+}

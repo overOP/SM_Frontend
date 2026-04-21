@@ -15,7 +15,7 @@ export function PermissionGate({
   const auth = useContext(AuthContext);
   const isSuperAdmin =
     auth?.user?.role === "admin" &&
-    auth.user.email.toLowerCase() === "admin@edumanage.com";
+    auth.user.email.toLowerCase() === "admin@sikshyanetra.com";
   if (permission === "super-admin-only" && !isSuperAdmin) return <>{fallback}</>;
   return <>{children}</>;
 }

@@ -23,7 +23,7 @@ const LeftBrandPanel = memo(function LeftBrandPanel({
           <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center">
             <Building2 size={24} className="text-white" />
           </div>
-          <h1 className="text-4xl font-bold">EduManage</h1>
+          <h1 className="text-4xl font-bold">Sikshyanetra</h1>
         </div>
         <p className="text-lg opacity-90 mb-16">School Management System</p>
         <h2 className="text-5xl font-extrabold leading-tight tracking-tight mb-7">
@@ -57,7 +57,7 @@ export default function LoginPage() {
   const navigate = useNavigate();
 
   // Updated to .com to match your AuthContext USERS mock data
-  const [email, setEmail] = useState("admin@edumanage.com");
+  const [email, setEmail] = useState("admin@sikshyanetra.com");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [activeRole, setActiveRole] = useState("Admin");
@@ -98,6 +98,9 @@ export default function LoginPage() {
       },
       "-=0.5"
     );
+    return () => {
+      tl.kill();
+    };
   }, []);
 
   return (
@@ -195,7 +198,7 @@ export default function LoginPage() {
           </form>
 
           <p className="text-center text-xs text-slate-400 mt-6">
-            Demo: Use admin@school.com / admin123
+            Demo: Use admin@sikshyanetra.com / admin123
           </p>
         </div>
       </div>
