@@ -1,206 +1,281 @@
-import React, { useState } from "react";
-import { 
-  Clock, 
-  MapPin, 
-  User, 
-  Coffee, 
-  FlaskConical, 
-  BookOpen,
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import {
   CalendarDays,
-  ChevronRight
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  Coffee,
+  Download,
+  FlaskConical,
+  Lock,
+  MapPin,
+  User,
 } from "lucide-react";
+import { Button, Card, StatusBadge } from "../ui";
+import {
+  StudentEmptyState,
+  StudentFilterHint,
+  StudentMetricSkeleton,
+  StudentTableSkeleton,
+} from "./shared/StudentModuleStates";
 
-// Reusable UI Library from your CRM project
-import { Card, StatusBadge, Button } from '../ui';
+type SessionType = "lecture" | "lab" | "break";
 
-// --- Types & Interfaces ---
-export type SessionType = "lecture" | "lab" | "break";
-
-export interface Session {
+interface Session {
+  id: string;
   subject: string;
-  time: string;
   teacher?: string;
   room?: string;
+  start: string;
+  end: string;
   type: SessionType;
 }
 
-export interface TimetableDay {
+interface TimetableDay {
   day: string;
   sessions: Session[];
 }
 
-// --- Static Data (Moved outside to satisfy React Compiler) ---
+const DAY_ORDER = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
 const TIMETABLE_DATA: TimetableDay[] = [
   {
     day: "Sunday",
     sessions: [
-      { subject: "English", teacher: "Ms. Emily Davis", time: "8:00 - 8:45", room: "Room 103", type: "lecture" },
-      { subject: "Mathematics", teacher: "Dr. Sarah Johnson", time: "8:50 - 9:35", room: "Room 101", type: "lecture" },
-      { subject: "Break", time: "10:25 - 10:45", type: "break" },
-      { subject: "Chemistry Lab", teacher: "Mr. Robert Wilson", time: "10:50 - 11:35", room: "Lab 1", type: "lab" },
+      { id: "sun-1", subject: "English", teacher: "Ms. Emily Davis", start: "08:00", end: "08:45", room: "Room 103", type: "lecture" },
+      { id: "sun-2", subject: "Mathematics", teacher: "Dr. Sarah Johnson", start: "08:50", end: "09:35", room: "Room 101", type: "lecture" },
+      { id: "sun-3", subject: "Short Break", start: "10:25", end: "10:45", type: "break" },
+      { id: "sun-4", subject: "Chemistry Lab", teacher: "Mr. Robert Wilson", start: "10:50", end: "11:35", room: "Lab 1", type: "lab" },
     ],
   },
   {
     day: "Monday",
     sessions: [
-      { subject: "Physics", teacher: "Prof. Michael Chen", time: "8:00 - 8:45", room: "Room 102", type: "lecture" },
-      { subject: "Mathematics", teacher: "Dr. Sarah Johnson", time: "8:50 - 9:35", room: "Room 101", type: "lecture" },
-      { subject: "Lunch", time: "12:25 - 1:10", type: "break" },
-      { subject: "History", teacher: "Mrs. Patricia Brown", time: "1:15 - 2:00", room: "Room 104", type: "lecture" },
+      { id: "mon-1", subject: "Physics", teacher: "Prof. Michael Chen", start: "08:00", end: "08:45", room: "Room 102", type: "lecture" },
+      { id: "mon-2", subject: "Mathematics", teacher: "Dr. Sarah Johnson", start: "08:50", end: "09:35", room: "Room 101", type: "lecture" },
+      { id: "mon-3", subject: "Lunch", start: "12:25", end: "13:10", type: "break" },
+      { id: "mon-4", subject: "History", teacher: "Mrs. Patricia Brown", start: "13:15", end: "14:00", room: "Room 104", type: "lecture" },
     ],
   },
   {
     day: "Tuesday",
     sessions: [
-      { subject: "Biology", teacher: "Dr. Lisa Anderson", time: "9:40 - 10:25", room: "Room 105", type: "lecture" },
-      { subject: "Geography", teacher: "Mr. James Wilson", time: "11:40 - 12:25", room: "Room 106", type: "lecture" },
-      { subject: "Physical Education", teacher: "Coach Miller", time: "1:15 - 2:00", room: "Sports Ground", type: "lecture" },
+      { id: "tue-1", subject: "Biology", teacher: "Dr. Lisa Anderson", start: "09:40", end: "10:25", room: "Room 105", type: "lecture" },
+      { id: "tue-2", subject: "Geography", teacher: "Mr. James Wilson", start: "11:40", end: "12:25", room: "Room 106", type: "lecture" },
+      { id: "tue-3", subject: "Physical Education", teacher: "Coach Miller", start: "13:15", end: "14:00", room: "Sports Ground", type: "lecture" },
     ],
   },
-  // Note: Add Wednesday-Friday here following the same structure
+  { day: "Wednesday", sessions: [] },
+  { day: "Thursday", sessions: [] },
+  { day: "Friday", sessions: [] },
+  { day: "Saturday", sessions: [] },
 ];
 
-const StudentTimetable: React.FC = () => {
-  // Logic to determine "Today" for the initial tab state
+function getSessionTone(type: SessionType): string {
+  if (type === "lab") return "bg-emerald-50 text-emerald-700 border-emerald-200";
+  if (type === "break") return "bg-slate-50 text-slate-600 border-slate-200";
+  return "bg-blue-50 text-blue-700 border-blue-200";
+}
+
+export default function StudentTimetableData() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const todayName = new Intl.DateTimeFormat("en-US", { weekday: "long" }).format(new Date());
-  
-  // State: Default to today if it exists in data, otherwise first day
-  const [activeTab, setActiveTab] = useState<string>(
-    TIMETABLE_DATA.some(d => d.day === todayName) ? todayName : TIMETABLE_DATA[0].day
+  const [weekOffset, setWeekOffset] = useState(Number(searchParams.get("week")) || 0);
+  const [activeDay, setActiveDay] = useState(searchParams.get("day") || todayName);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    if (!DAY_ORDER.includes(activeDay)) {
+      setActiveDay(todayName);
+    }
+  }, [activeDay, todayName]);
+
+  useEffect(() => {
+    setSearchParams({ day: activeDay, week: String(weekOffset) }, { replace: true });
+  }, [activeDay, weekOffset, setSearchParams]);
+
+  useEffect(() => {
+    setIsLoading(true);
+    const timer = setTimeout(() => setIsLoading(false), 400);
+    return () => clearTimeout(timer);
+  }, [activeDay, weekOffset]);
+
+  const sessions = useMemo(
+    () => TIMETABLE_DATA.find((entry) => entry.day === activeDay)?.sessions ?? [],
+    [activeDay]
   );
 
-  // Deriving data (React Compiler handles the optimization automatically now)
-  const currentDayData = TIMETABLE_DATA.find(d => d.day === activeTab);
-  const sessions = currentDayData?.sessions || [];
+  const stats = useMemo(() => {
+    const lectures = sessions.filter((item) => item.type === "lecture").length;
+    const labs = sessions.filter((item) => item.type === "lab").length;
+    return {
+      total: sessions.length,
+      lectures,
+      labs,
+    };
+  }, [sessions]);
+
+  const weekLabel = weekOffset === 0 ? "Current Week" : weekOffset > 0 ? `Week +${weekOffset}` : `Week ${weekOffset}`;
+
+  const prevWeek = () => setWeekOffset((prev) => prev - 1);
+  const nextWeek = () => setWeekOffset((prev) => prev + 1);
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <StudentMetricSkeleton cards={3} />
+        <StudentTableSkeleton rows={3} />
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-700">
-      
-      {/* 1. Page Header & Tab Navigation */}
-      <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2 text-blue-600">
-            <CalendarDays size={18} />
-            <span className="text-[10px] font-black uppercase tracking-[0.2em]">Academic Schedule</span>
+    <div className="space-y-6">
+      <Card className="border-slate-200 bg-white">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <p className="text-[11px] font-black uppercase tracking-[0.18em] text-blue-600">Timetable</p>
+            <h2 className="mt-1 text-xl font-black text-slate-900">Weekly schedule planner</h2>
+            <p className="mt-1 text-sm text-slate-500">Schedule data is read-only and managed by administration.</p>
           </div>
-          <h2 className="text-4xl font-black text-slate-900 tracking-tight">Timetable</h2>
+          <Button type="button" variant="outline" className="gap-2" title="Download timetable PDF">
+            <Download size={14} />
+            Download PDF
+          </Button>
+        </div>
+      </Card>
+
+      <Card className="border-slate-200 bg-blue-50/40 p-4 shadow-sm">
+        <div className="flex items-start gap-2 text-xs text-slate-600">
+          <Lock size={14} className="mt-0.5 shrink-0 text-blue-600" />
+          Timetable entries are informational only. Contact administration for changes.
+        </div>
+      </Card>
+
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <Card className="border-slate-200">
+          <p className="text-xs font-black uppercase tracking-wider text-slate-500">Total Sessions</p>
+          <p className="mt-3 text-2xl font-black text-slate-900">{stats.total}</p>
+        </Card>
+        <Card className="border-slate-200">
+          <p className="text-xs font-black uppercase tracking-wider text-slate-500">Lecture Slots</p>
+          <p className="mt-3 text-2xl font-black text-slate-900">{stats.lectures}</p>
+        </Card>
+        <Card className="border-slate-200">
+          <p className="text-xs font-black uppercase tracking-wider text-slate-500">Lab Slots</p>
+          <p className="mt-3 text-2xl font-black text-slate-900">{stats.labs}</p>
+        </Card>
+      </div>
+
+      <Card className="border-slate-200">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-center gap-2">
+            <CalendarDays size={16} className="text-blue-600" />
+            <p className="text-xs font-black uppercase tracking-[0.15em] text-slate-500">{weekLabel}</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button type="button" variant="outline" size="sm" onClick={prevWeek} title="Previous week">
+              <ChevronLeft size={14} />
+            </Button>
+            <Button type="button" variant="outline" size="sm" onClick={nextWeek} title="Next week">
+              <ChevronRight size={14} />
+            </Button>
+          </div>
         </div>
 
-        {/* Custom Tab Switcher */}
-        <div className="flex p-1.5 bg-slate-100 rounded-[1.5rem] border border-slate-200 overflow-x-auto no-scrollbar">
-          {TIMETABLE_DATA.map((item) => (
+        <div className="mt-4 flex flex-wrap gap-2">
+          {DAY_ORDER.map((day) => (
             <button
-              key={item.day}
-              onClick={() => setActiveTab(item.day)}
-              className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${
-                activeTab === item.day 
-                ? "bg-white text-blue-600 shadow-xl shadow-blue-100 scale-105" 
-                : "text-slate-400 hover:text-slate-600"
+              key={day}
+              type="button"
+              onClick={() => setActiveDay(day)}
+              className={`rounded-xl px-3 py-2 text-xs font-black uppercase tracking-wider transition-all ${
+                activeDay === day
+                  ? "bg-blue-600 text-white shadow-md shadow-blue-100"
+                  : "bg-slate-100 text-slate-500 hover:bg-slate-200"
               }`}
+              title={`View ${day} schedule`}
             >
-              {item.day === todayName ? "Today" : item.day.substring(0, 3)}
+              {day.slice(0, 3)}
             </button>
           ))}
         </div>
-      </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
-        
-        {/* 2. Main Session Feed (3/4 Width) */}
-        <div className="xl:col-span-3 space-y-4">
-          {sessions.length > 0 ? (
-            sessions.map((session, index) => (
-              <Card 
-                key={`${activeTab}-${index}`} 
-                noPadding 
-                className={`border-none shadow-lg shadow-slate-200/40 group hover:translate-x-1 transition-all duration-300 ${
-                  session.type === 'break' ? 'opacity-70' : ''
-                }`}
-              >
-                <div className="flex items-stretch min-h-[90px]">
-                  {/* Visual Status Bar */}
-                  <div className={`w-1.5 ${
-                    session.type === 'lab' ? 'bg-emerald-500' : 
-                    session.type === 'break' ? 'bg-slate-300' : 'bg-blue-600'
-                  }`} />
-
-                  <div className="flex-1 p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div className="flex items-start gap-5">
-                      {/* Contextual Icon */}
-                      <div className={`p-4 rounded-2xl shrink-0 ${
-                        session.type === 'lab' ? 'bg-emerald-50 text-emerald-600' : 
-                        session.type === 'break' ? 'bg-slate-50 text-slate-400' : 'bg-blue-50 text-blue-600'
-                      }`}>
-                        {session.type === 'lab' ? <FlaskConical size={22} /> : 
-                         session.type === 'break' ? <Coffee size={22} /> : <BookOpen size={22} />}
-                      </div>
-
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-3">
-                          <h4 className="font-black text-slate-800 text-lg leading-tight">
-                            {session.subject}
-                          </h4>
-                          <StatusBadge 
-                            status={session.type} 
-                            variant={session.type === 'lab' ? 'success' : session.type === 'break' ? 'default' : 'info'} 
-                          />
-                        </div>
-                        
-                        {session.type !== 'break' && (
-                          <div className="flex flex-wrap items-center gap-4 text-slate-400 font-bold text-[10px] uppercase tracking-widest mt-2">
-                            <span className="flex items-center gap-1.5"><User size={12} className="text-slate-300" /> {session.teacher}</span>
-                            <span className="flex items-center gap-1.5"><MapPin size={12} className="text-slate-300" /> {session.room}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-6">
-                       <div className="text-left md:text-right">
-                          <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-1">Schedule</p>
-                          <div className="flex items-center gap-2 text-slate-700 font-black text-sm">
-                             <Clock size={14} className="text-blue-500" />
-                             {session.time}
-                          </div>
-                       </div>
-                       <ChevronRight className="text-slate-200 group-hover:text-blue-600 transition-colors hidden md:block" />
-                    </div>
-                  </div>
-                </div>
-              </Card>
-            ))
-          ) : (
-            <Card className="py-20 text-center border-dashed border-2 border-slate-100 shadow-none">
-               <Coffee size={40} className="mx-auto text-slate-200 mb-4" />
-               <h3 className="text-lg font-black text-slate-800">Rest Day</h3>
-               <p className="text-slate-400 text-xs font-medium uppercase tracking-widest mt-1">No sessions scheduled for {activeTab}</p>
-            </Card>
-          )}
+        <div className="mt-5 overflow-x-auto">
+          <table className="w-full min-w-[640px] text-left">
+            <thead>
+              <tr className="border-b border-slate-100 text-[11px] uppercase tracking-wider text-slate-400">
+                <th className="py-2">Time</th>
+                <th className="py-2">Subject</th>
+                <th className="py-2">Teacher</th>
+                <th className="py-2">Room</th>
+                <th className="py-2">Type</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sessions.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="p-4">
+                    <StudentEmptyState title="No sessions scheduled" description={`No classes planned for ${activeDay}.`} />
+                  </td>
+                </tr>
+              ) : (
+                sessions.map((session) => (
+                  <tr key={session.id} className="border-b border-slate-50 text-sm last:border-b-0">
+                    <td className="py-2.5">
+                      <span className="inline-flex items-center gap-1 text-slate-700">
+                        <Clock size={13} className="text-slate-400" />
+                        {session.start} - {session.end}
+                      </span>
+                    </td>
+                    <td className="py-2.5 font-semibold text-slate-800">{session.subject}</td>
+                    <td className="py-2.5 text-slate-600">
+                      {session.teacher ? (
+                        <span className="inline-flex items-center gap-1">
+                          <User size={13} className="text-slate-400" />
+                          {session.teacher}
+                        </span>
+                      ) : (
+                        "-"
+                      )}
+                    </td>
+                    <td className="py-2.5 text-slate-600">
+                      {session.room ? (
+                        <span className="inline-flex items-center gap-1">
+                          <MapPin size={13} className="text-slate-400" />
+                          {session.room}
+                        </span>
+                      ) : (
+                        "-"
+                      )}
+                    </td>
+                    <td className="py-2.5">
+                      <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-1 text-[10px] font-bold uppercase ${getSessionTone(session.type)}`}>
+                        {session.type === "lab" ? <FlaskConical size={12} /> : session.type === "break" ? <Coffee size={12} /> : null}
+                        {session.type}
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
 
-        {/* 3. Sidebar (1/4 Width) */}
-        <div className="space-y-6">
-           <Card title="Quick Actions" className="border-none shadow-xl">
-              <div className="space-y-3">
-                 <Button variant="outline" className="w-full rounded-xl justify-start h-12 text-[10px] font-black uppercase tracking-widest">
-                    Download PDF
-                 </Button>
-                 <Button variant="outline" className="w-full rounded-xl justify-start h-12 text-[10px] font-black uppercase tracking-widest">
-                    Request Change
-                 </Button>
-              </div>
-           </Card>
+      </Card>
 
-           <div className="p-8 rounded-[2rem] bg-gradient-to-br from-slate-800 to-slate-900 text-white shadow-2xl">
-              <h4 className="font-black text-lg mb-2">Teacher's Note</h4>
-              <p className="text-xs text-slate-400 leading-relaxed italic">
-                "Please remember to bring your lab coats for the Chemistry session on Sunday."
-              </p>
-           </div>
+      <Card className="border-slate-200">
+        <h3 className="text-sm font-black uppercase tracking-[0.15em] text-slate-500">Schedule notes</h3>
+        <p className="mt-3 text-sm text-slate-600">
+          Please keep lab coat and notebook ready for all lab sessions. Arrive at least 5 minutes before slot start.
+        </p>
+        <div className="mt-4">
+          <StatusBadge status="Read only" variant="info" />
         </div>
-      </div>
+      </Card>
+
+      <StudentFilterHint params={["day", "week"]} />
     </div>
   );
-};
-
-export default StudentTimetable;
+}

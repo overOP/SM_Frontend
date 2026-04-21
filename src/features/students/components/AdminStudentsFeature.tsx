@@ -14,6 +14,10 @@ import { StudentTableSkeleton } from "./StudentTableSkeleton";
 import { BulkImportModal } from "./BulkImportModal";
 import { AdminKpiRow } from "../../../components/Admin/shared/AdminKpiRow";
 import { StudentManagementDetailView } from "./StudentManagementDetailView";
+import {
+  AdminDetailEmpty,
+  AdminFilterHint,
+} from "../../shared/components/AdminFeatureStates";
 
 export function AdminStudentsFeature() {
   const { filters, setSearch, setClassName, setSection, setPage, clear } =
@@ -230,11 +234,11 @@ export function AdminStudentsFeature() {
             }}
           />
         ) : (
-          <Card className="rounded-2xl p-8 text-center text-sm text-slate-500">
-            Select a student to open the management detail view.
-          </Card>
+          <AdminDetailEmpty message="Select a student to open the management detail view." />
         )}
       </div>
+
+      <AdminFilterHint params={["search", "class", "section", "page"]} />
 
       <BulkImportModal
         isOpen={isImportOpen}

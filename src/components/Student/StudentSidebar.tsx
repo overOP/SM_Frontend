@@ -1,6 +1,6 @@
 import React, { useContext, useMemo } from "react";
 import { AuthContext } from "../../context/AuthContext";
-import type { LucideIcon } from "lucide-react";
+import type { StudentSidebarGroup } from "../../data/studentdashboardData";
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -13,15 +13,10 @@ import { useNavigate } from "react-router-dom";
 // Using your reusable UI library components
 import { Card, Button } from "../ui";
 
-interface SidebarItem {
-  icon: LucideIcon;
-  label: string;
-}
-
 interface StudentSidebarProps {
   collapsed: boolean;
   setCollapsed: (value: boolean) => void;
-  sidebarItems: SidebarItem[];
+  sidebarGroups: StudentSidebarGroup[];
   mobileOpen: boolean;
   setMobileOpen: (value: boolean) => void;
   activeItem: string;
@@ -31,7 +26,7 @@ interface StudentSidebarProps {
 const StudentSidebar: React.FC<StudentSidebarProps> = ({
   collapsed,
   setCollapsed,
-  sidebarItems,
+  sidebarGroups,
   mobileOpen,
   setMobileOpen,
   activeItem,
@@ -109,38 +104,49 @@ const StudentSidebar: React.FC<StudentSidebarProps> = ({
         </div>
 
         {/* Main Navigation */}
-        <nav className="flex-1 p-5 space-y-2 overflow-y-auto no-scrollbar">
-          {sidebarItems.map((item) => {
-            const isActive = activeItem === item.label;
-            return (
-              <button
-                key={item.label}
-                onClick={() => { setActiveItem(item.label); setMobileOpen(false); }}
-                className={`
-                  w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all duration-200 group relative
-                  ${isActive 
-                    ? "bg-blue-600 text-white shadow-xl shadow-blue-100" 
-                    : "text-slate-500 hover:bg-blue-50 hover:text-blue-600"
-                  }
-                `}
-              >
-                <item.icon className={`shrink-0 w-5 h-5 ${isActive ? "text-white" : "text-slate-400 group-hover:text-blue-600"}`} />
-                
-                {!collapsed && (
-                  <span className="text-[11px] font-black uppercase tracking-[0.15em] truncate">
-                    {item.label}
-                  </span>
-                )}
-                
-                {/* Collapsed Tooltip (Blue Theme) */}
-                {collapsed && (
-                  <div className="absolute left-full ml-4 px-3 py-2 bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-[100] whitespace-nowrap shadow-lg shadow-blue-100">
-                    {item.label}
-                  </div>
-                )}
-              </button>
-            );
-          })}
+        <nav className="flex-1 space-y-6 overflow-y-auto p-5 no-scrollbar">
+          {sidebarGroups.map((group) => (
+            <div key={group.title} className="space-y-2">
+              {!collapsed && (
+                <p className="px-2 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">{group.title}</p>
+              )}
+              {group.items.map((item) => {
+                const isActive = activeItem === item.label;
+                return (
+                  <button
+                    key={item.label}
+                    onClick={() => { setActiveItem(item.label); setMobileOpen(false); }}
+                    className={`
+                      w-full flex items-center gap-4 px-4 py-3 rounded-2xl transition-all duration-200 group relative text-left
+                      ${isActive 
+                        ? "bg-blue-600 text-white shadow-xl shadow-blue-100" 
+                        : "text-slate-500 hover:bg-blue-50 hover:text-blue-600"
+                      }
+                    `}
+                  >
+                    <item.icon className={`shrink-0 w-5 h-5 ${isActive ? "text-white" : "text-slate-400 group-hover:text-blue-600"}`} />
+                    
+                    {!collapsed && (
+                      <div className="min-w-0">
+                        <p className="truncate text-[11px] font-black uppercase tracking-[0.15em]">{item.label}</p>
+                        {item.description && (
+                          <p className={`truncate text-[10px] font-medium ${isActive ? "text-blue-100" : "text-slate-400"}`}>
+                            {item.description}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                    
+                    {collapsed && (
+                      <div className="absolute left-full z-[100] ml-4 whitespace-nowrap rounded-lg bg-blue-600 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-white opacity-0 pointer-events-none transition-opacity group-hover:opacity-100 shadow-lg shadow-blue-100">
+                        {item.label}
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          ))}
         </nav>
 
         {/* Footer Section */}

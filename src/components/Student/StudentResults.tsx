@@ -1,5 +1,6 @@
 import {
   Suspense,
+  useEffect,
   use,
   useContext,
   useMemo,
@@ -24,6 +25,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { useSearchParams } from "react-router-dom";
 
 import { AuthContext } from "../../context/AuthContext";
 import { loadStudentResultsBundle, STUDENT_DEMO_ID } from "../../data/studentResultsData";
@@ -31,6 +33,7 @@ import { canStudentViewResultRow } from "../../lib/resultsPermissions";
 import { rowPercentage } from "../../lib/gpa";
 import type { AcademicResultDTO } from "../../types/results";
 import { Card, Button, Input, Select } from "../ui";
+import { StudentFilterHint } from "./shared/StudentModuleStates";
 
 function gradeTone(pct: number, letter: string): string {
   if (letter === "F" || pct < 40) {
@@ -47,10 +50,11 @@ function gradeTone(pct: number, letter: string): string {
 
 function ResultsBody({ userId }: { userId: string }) {
   const bundle = use(loadStudentResultsBundle(userId));
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  const [semesterLabel, setSemesterLabel] = useState("All semesters");
-  const [categoryLabel, setCategoryLabel] = useState("All categories");
-  const [query, setQuery] = useState("");
+  const [semesterLabel, setSemesterLabel] = useState(searchParams.get("semester") ?? "All semesters");
+  const [categoryLabel, setCategoryLabel] = useState(searchParams.get("category") ?? "All categories");
+  const [query, setQuery] = useState(searchParams.get("q") ?? "");
 
   const subjectMap = useMemo(
     () => new Map(bundle.subjects.map((s) => [s.id, s])),
@@ -90,6 +94,14 @@ function ResultsBody({ userId }: { userId: string }) {
     () => ["All semesters", ...bundle.semesters.sort((a, b) => a.order - b.order).map((s) => s.label)],
     [bundle.semesters]
   );
+
+  useEffect(() => {
+    const next: Record<string, string> = {};
+    if (semesterLabel !== "All semesters") next.semester = semesterLabel;
+    if (categoryLabel !== "All categories") next.category = categoryLabel;
+    if (query.trim()) next.q = query.trim();
+    setSearchParams(next, { replace: true });
+  }, [semesterLabel, categoryLabel, query, setSearchParams]);
 
   const chartData = bundle.overview.semesterTrend.map((t) => ({
     name: t.semesterLabel,
@@ -179,23 +191,47 @@ function ResultsBody({ userId }: { userId: string }) {
       </Card>
 
       {/* Filters */}
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-3 print:hidden">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-4 print:hidden">
         <Input
           placeholder="Search subject or code..."
           icon={Search}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
+          title="Search subject or code"
         />
         <Select
           options={semesterLabels}
           value={semesterLabel}
           onChange={(e) => setSemesterLabel(e.target.value)}
+          title="Filter by semester"
         />
         <Select
           options={categories.map((c) => (c === "all" ? "All categories" : c))}
           value={categoryLabel}
           onChange={(e) => setCategoryLabel(e.target.value)}
+          title="Filter by category"
         />
+        <Button
+          type="button"
+          variant="outline"
+          className="rounded-xl border-slate-200"
+          onClick={() => {
+            setSemesterLabel("All semesters");
+            setCategoryLabel("All categories");
+            setQuery("");
+          }}
+          title="Reset all filters"
+        >
+          Reset filters
+        </Button>
+      </div>
+
+      <div className="print:hidden">
+        <StatusPill text={`${filtered.length} published rows`} />
+      </div>
+
+      <div className="print:hidden">
+        <StudentFilterHint params={["q", "semester", "category"]} />
       </div>
 
       {/* Desktop table */}
@@ -270,6 +306,14 @@ function ResultsBody({ userId }: { userId: string }) {
         <p className="text-center text-xs font-bold text-slate-500">Official transcript (demo) — {bundle.student.name}</p>
       </div>
     </div>
+  );
+}
+
+function StatusPill({ text }: { text: string }) {
+  return (
+    <span className="inline-flex rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700">
+      {text}
+    </span>
   );
 }
 
