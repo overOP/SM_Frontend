@@ -7,7 +7,6 @@ import { Modal } from "../ui/Modal";
 import {
   StudentCardGridSkeleton,
   StudentEmptyState,
-  StudentFilterHint,
 } from "./shared/StudentModuleStates";
 
 // Static data defined outside the component to satisfy the React Compiler
@@ -195,8 +194,6 @@ export default function StudentAnnouncementData() {
           </section>
         </>
       )}
-
-      <StudentFilterHint params={["q", "priority"]} />
 
       <Modal isOpen={Boolean(activeAnnouncement)} onClose={() => setActiveAnnouncement(null)} title="Announcement">
         {activeAnnouncement ? (

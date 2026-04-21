@@ -15,7 +15,6 @@ import {
 import { Button, Card, StatusBadge } from "../ui";
 import {
   StudentEmptyState,
-  StudentFilterHint,
   StudentMetricSkeleton,
   StudentTableSkeleton,
 } from "./shared/StudentModuleStates";
@@ -274,8 +273,6 @@ export default function StudentTimetableData() {
           <StatusBadge status="Read only" variant="info" />
         </div>
       </Card>
-
-      <StudentFilterHint params={["day", "week"]} />
     </div>
   );
 }

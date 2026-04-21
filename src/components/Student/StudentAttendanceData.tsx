@@ -6,7 +6,6 @@ import { Button, Card, Input } from "../ui";
 import { Modal } from "../ui/Modal";
 import {
   StudentCalendarSkeleton,
-  StudentFilterHint,
   StudentMetricSkeleton,
 } from "./shared/StudentModuleStates";
 
@@ -376,9 +375,6 @@ export default function StudentAttendanceData() {
           </div>
         </Card>
       </div>
-
-      <StudentFilterHint params={["month", "year"]} />
-
       <Modal isOpen={isLeaveModalOpen} onClose={() => setIsLeaveModalOpen(false)} title="Request Leave">
         <form className="space-y-4" onSubmit={submitLeave}>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">

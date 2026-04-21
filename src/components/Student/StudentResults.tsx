@@ -33,7 +33,6 @@ import { canStudentViewResultRow } from "../../lib/resultsPermissions";
 import { rowPercentage } from "../../lib/gpa";
 import type { AcademicResultDTO } from "../../types/results";
 import { Card, Button, Input, Select } from "../ui";
-import { StudentFilterHint } from "./shared/StudentModuleStates";
 
 function gradeTone(pct: number, letter: string): string {
   if (letter === "F" || pct < 40) {
@@ -229,11 +228,6 @@ function ResultsBody({ userId }: { userId: string }) {
       <div className="print:hidden">
         <StatusPill text={`${filtered.length} published rows`} />
       </div>
-
-      <div className="print:hidden">
-        <StudentFilterHint params={["q", "semester", "category"]} />
-      </div>
-
       {/* Desktop table */}
       <Card className="hidden overflow-hidden border-none shadow-sm md:block print:block print:shadow-none rounded-[2rem] print:rounded-lg">
         <div className="overflow-x-auto">

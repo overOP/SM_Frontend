@@ -16,7 +16,6 @@ import { AttendanceDataTable } from "./AttendanceDataTable";
 import { AttendanceDetailView } from "./AttendanceDetailView";
 import {
   AdminDetailEmpty,
-  AdminFilterHint,
   AdminTableSkeleton,
   AdminWarningPill,
 } from "../../shared/components/AdminFeatureStates";
@@ -220,8 +219,6 @@ export function AttendanceFeature() {
           <AdminDetailEmpty message="Select a row to open attendance detail." />
         )}
       </div>
-
-      <AdminFilterHint params={["class", "date", "search", "page"]} />
     </div>
   );
 }

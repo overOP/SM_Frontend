@@ -14,7 +14,6 @@ import { Button, Card, DataTable, Input, StatCard, StatusBadge } from "../ui";
 import { Modal } from "../ui/Modal";
 import {
   StudentEmptyState,
-  StudentFilterHint,
   StudentMetricSkeleton,
   StudentTableSkeleton,
 } from "./shared/StudentModuleStates";
@@ -273,8 +272,6 @@ export default function StudentHomework() {
               </div>
             </Card>
           </div>
-
-          <StudentFilterHint params={["q", "status"]} />
         </>
       )}
 

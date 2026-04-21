@@ -16,7 +16,6 @@ import { Modal } from "../ui/Modal";
 import {
   StudentCardGridSkeleton,
   StudentEmptyState,
-  StudentFilterHint,
 } from "./shared/StudentModuleStates";
 
 type EventType = "Sports" | "Meeting" | "Academic" | "Cultural" | "Holiday";
@@ -244,8 +243,6 @@ export default function StudentEventData() {
           ))}
         </div>
       )}
-
-      <StudentFilterHint params={["q", "type"]} />
 
       <Modal isOpen={Boolean(activeEvent)} onClose={() => setActiveEvent(null)} title="Event Details">
         {activeEvent ? (

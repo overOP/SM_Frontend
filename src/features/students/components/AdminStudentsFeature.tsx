@@ -16,7 +16,6 @@ import { AdminKpiRow } from "../../../components/Admin/shared/AdminKpiRow";
 import { StudentManagementDetailView } from "./StudentManagementDetailView";
 import {
   AdminDetailEmpty,
-  AdminFilterHint,
 } from "../../shared/components/AdminFeatureStates";
 
 export function AdminStudentsFeature() {
@@ -237,9 +236,6 @@ export function AdminStudentsFeature() {
           <AdminDetailEmpty message="Select a student to open the management detail view." />
         )}
       </div>
-
-      <AdminFilterHint params={["search", "class", "section", "page"]} />
-
       <BulkImportModal
         isOpen={isImportOpen}
         onClose={() => setIsImportOpen(false)}
